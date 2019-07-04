@@ -2,7 +2,7 @@ use crate::utils::Trim;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
-pub struct PieceSrc<'a> {
+pub struct RawPiece<'a> {
     field: &'a str,
     ri: f32,
     rj: f32,
@@ -11,7 +11,7 @@ pub struct PieceSrc<'a> {
 #[derive(Debug, Eq, PartialEq)]
 pub struct Point(pub i32, pub i32);
 
-pub const I: PieceSrc<'static> = PieceSrc {
+pub const I: RawPiece<'static> = RawPiece {
     field: r#"
         . . . .
         * * * *
@@ -21,7 +21,7 @@ pub const I: PieceSrc<'static> = PieceSrc {
     ri: 1.0,
     rj: 1.5,
 };
-pub const O: PieceSrc<'static> = PieceSrc {
+pub const O: RawPiece<'static> = RawPiece {
     field: r#"
         . . . .
         . * * .
@@ -31,7 +31,7 @@ pub const O: PieceSrc<'static> = PieceSrc {
     ri: 1.5,
     rj: 1.5,
 };
-pub const L: PieceSrc<'static> = PieceSrc {
+pub const L: RawPiece<'static> = RawPiece {
     field: r#"
         . * . .
         . * . .
@@ -41,7 +41,7 @@ pub const L: PieceSrc<'static> = PieceSrc {
     ri: 1.0,
     rj: 1.5,
 };
-pub const J: PieceSrc<'static> = PieceSrc {
+pub const J: RawPiece<'static> = RawPiece {
     field: r#"
         . . * .
         . . * .
@@ -51,7 +51,7 @@ pub const J: PieceSrc<'static> = PieceSrc {
     ri: 1.0,
     rj: 1.5,
 };
-pub const T: PieceSrc<'static> = PieceSrc {
+pub const T: RawPiece<'static> = RawPiece {
     field: r#"
         . . . .
         * * * .
@@ -61,7 +61,7 @@ pub const T: PieceSrc<'static> = PieceSrc {
     ri: 1.5,
     rj: 1.0,
 };
-pub const S: PieceSrc<'static> = PieceSrc {
+pub const S: RawPiece<'static> = RawPiece {
     field: r#"
         . . . .
         . * * .
@@ -71,7 +71,7 @@ pub const S: PieceSrc<'static> = PieceSrc {
     ri: 1.5,
     rj: 1.0,
 };
-pub const Z: PieceSrc<'static>  = PieceSrc {
+pub const Z: RawPiece<'static>  = RawPiece {
     field: r#"
         . . . .
         * * . .
@@ -82,7 +82,7 @@ pub const Z: PieceSrc<'static>  = PieceSrc {
     rj: 1.0,
 };
 
-pub fn convert(src: PieceSrc<'_>) -> Vec<Point> {
+pub fn convert(src: RawPiece<'_>) -> Vec<Point> {
     let mut vec: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
     for line in src.field.trim_indent().split('\n') {
