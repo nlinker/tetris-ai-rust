@@ -82,9 +82,14 @@ pub const Z: RawPiece<'static>  = RawPiece {
     rj: 1.0,
 };
 
-pub fn convert(src: RawPiece<'_>) -> Vec<Point> {
+
+/// return the piece points relative of (0, 0) with parity
+pub fn convert(src: RawPiece<'_>) -> (Vec<Point>, Point) {
     let mut vec: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
+    // parity is needed to know how to round the piece after the rotation
+    let mut parity_i = 0;
+    let mut parity_j = 0;
     for line in src.field.trim_indent().split('\n') {
         let mut cj = 0;
         for c in line.chars() {
@@ -92,6 +97,8 @@ pub fn convert(src: RawPiece<'_>) -> Vec<Point> {
                 let i = (2.0 * ((ci as f32) - src.ri)).trunc() as i32;
                 let j = (2.0 * ((cj as f32) - src.rj)).trunc() as i32;
                 vec.push(Point(i, j));
+                if i % 2 == 1 { parity_i = 1; }
+                if j % 2 == 1 { parity_j = 1; }
                 cj += 1;
             } else if c == '.' {
                 cj += 1;
@@ -99,7 +106,7 @@ pub fn convert(src: RawPiece<'_>) -> Vec<Point> {
         }
         ci += 1;
     }
-    vec
+    (vec, Point(parity_i, parity_j))
 }
 
 
