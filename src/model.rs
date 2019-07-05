@@ -158,8 +158,8 @@ pub fn rotate(piece: &Piece, r: i8) -> Vec<Point> {
 }
 
 pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option<Vec<Point>> {
-    let mut points: Vec<Point> = Vec::with_capacity(4);
-    for d in &piece.diffs {
+    let mut points = rotate(&piece, r);
+    for d in &points {
         let i = base.0 + d.0;
         let j = base.1 + d.1;
         if i < 0 || field.height as i32 <= i {
@@ -168,9 +168,12 @@ pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option
             return None;
         } else if field.cells[i as usize][j as usize] != 0 {
             return None;
-        } else {
-            points.push(Point(i, j));
         }
+    }
+    // shift points w.r.t. base
+    for d in &mut points {
+        d.0 = base.0 + d.0;
+        d.1 = base.1 + d.1;
     }
     Some(points)
 }
