@@ -132,7 +132,7 @@ pub fn convert_piece(src: RawPiece<'_>) -> Piece {
     Piece { diffs, shift: Point(shift_i, shift_j) }
 }
 
-pub fn rotate(piece: &Piece, r: i8) -> Piece {
+pub fn rotate(piece: &Piece, r: i8) -> Vec<Point> {
     // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
     let r = (r % 4 + 4) % 4;
     let mut p = piece.clone();
@@ -149,10 +149,15 @@ pub fn rotate(piece: &Piece, r: i8) -> Piece {
         p.shift.1 = p.shift.0;
         p.shift.0 = t;
     }
-    p
+    // shift and divide, so (0, 0) is the integer center of the rotated piece
+    for d in &mut p.diffs {
+        d.0 = (d.0 - p.shift.0) / 2;
+        d.1 = (d.1 - p.shift.1) / 2;
+    }
+    p.diffs
 }
 
-pub fn try_position(field: &Field, base: &Point, piece: &Piece) -> Option<Vec<Point>> {
+pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option<Vec<Point>> {
     let mut points: Vec<Point> = Vec::with_capacity(4);
     for d in &piece.diffs {
         let i = base.0 + d.0;
