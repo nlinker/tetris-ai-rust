@@ -8,14 +8,31 @@ pub struct RawPiece<'a> {
     rj: f32,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Point(pub i32, pub i32);
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Piece {
     pub diffs: Vec<Point>,
     pub shift: Point,
 }
+
+/// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
+/// Example:
+/// ```rust
+/// for i in 0..height {
+///     for j in 0..width {
+///         // ok to access field[i][j]
+///     }
+/// }
+/// ```
+#[derive(Debug, Eq, PartialEq)]
+pub struct Field {
+    pub cells: Vec<Vec<u8>>,
+    pub height: usize,
+    pub width: usize,
+}
+
 
 pub const I: RawPiece<'static> = RawPiece {
     field: r#"
@@ -90,7 +107,7 @@ pub const Z: RawPiece<'static>  = RawPiece {
 
 
 /// return the piece points relative of (0, 0) with parity
-pub fn convert(src: RawPiece<'_>) -> Piece {
+pub fn convert_piece(src: RawPiece<'_>) -> Piece {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
     // shift is needed to know how to round the piece after the rotation
@@ -115,8 +132,42 @@ pub fn convert(src: RawPiece<'_>) -> Piece {
     Piece { diffs, shift: Point(shift_i, shift_j) }
 }
 
-fn try_position(field: Vec<Vec<u8>>, base: Point, piece: Piece) -> Option<Vec<Point>> {
-    None
+pub fn rotate(piece: &Piece, r: i8) -> Piece {
+    // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
+    let r = (r % 4 + 4) % 4;
+    let mut p = piece.clone();
+    for _ in 0..r {
+        for d in &mut p.diffs {
+            // rotate counterclockwise (-1, -2) => (2, -1),
+            // i.e. negate the second coordinate and then swap
+            let t = -d.1;
+            d.1 = d.0;
+            d.0 = t;
+        }
+        // swap shift
+        let t = p.shift.1;
+        p.shift.1 = p.shift.0;
+        p.shift.0 = t;
+    }
+    p
+}
+
+pub fn try_position(field: &Field, base: &Point, piece: &Piece) -> Option<Vec<Point>> {
+    let mut points: Vec<Point> = Vec::with_capacity(4);
+    for d in &piece.diffs {
+        let i = base.0 + d.0;
+        let j = base.1 + d.1;
+        if i < 0 || field.height as i32 <= i {
+            return None;
+        } else if j < 0 || field.width as i32 <= j {
+            return None;
+        } else if field.cells[i as usize][j as usize] != 0 {
+            return None;
+        } else {
+            points.push(Point(i, j));
+        }
+    }
+    Some(points)
 }
 
 
