@@ -120,7 +120,7 @@ pub const Z: RawPiece<'static>  = RawPiece {
 
 
 /// return the piece points relative of (0, 0) with parity
-pub fn convert_piece(src: RawPiece<'_>) -> Piece {
+pub fn build_piece(src: RawPiece<'_>) -> Piece {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
     // shift is needed to know how to round the piece after the rotation

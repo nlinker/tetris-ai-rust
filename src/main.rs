@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 //const TEST: (String, Point) = ("xxx".into(), Point(0, 0));
-use tetris::model::{I, T, convert_piece};
+use tetris::model::{I, T, build_piece};
 use tetris::utils::Trim;
 
 fn build_piece(p_str: &str) -> Vec<u8> {
@@ -24,6 +24,6 @@ fn build_piece(p_str: &str) -> Vec<u8> {
 
 
 fn main() {
-    let t = convert_piece(I);
+    let t = build_piece(I);
     println!("{:?}", t);
 }
