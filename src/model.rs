@@ -2,7 +2,7 @@ use crate::utils::Trim;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
-pub struct RawPiece<'a> {
+pub struct RawShape<'a> {
     field: &'a str,
     ri: f32,
     rj: f32,
@@ -12,9 +12,21 @@ pub struct RawPiece<'a> {
 pub struct Point(pub i32, pub i32);
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Piece {
+pub struct Shape {
     pub diffs: Vec<Point>,
     pub shift: Point,
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Color {
+    Cyan,
+    Blue,
+    Orange,
+    Yellow,
+    Lime,
+    Purple,
+    Red,
+    Grey,
 }
 
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
@@ -47,7 +59,7 @@ pub struct Field {
 }
 
 
-pub const I: RawPiece<'static> = RawPiece {
+pub const I: RawShape<'static> = RawShape {
     field: r#"
         . . . .
         * * * *
@@ -57,7 +69,7 @@ pub const I: RawPiece<'static> = RawPiece {
     ri: 1.0,
     rj: 1.5,
 };
-pub const O: RawPiece<'static> = RawPiece {
+pub const O: RawShape<'static> = RawShape {
     field: r#"
         . . . .
         . * * .
@@ -67,7 +79,7 @@ pub const O: RawPiece<'static> = RawPiece {
     ri: 1.5,
     rj: 1.5,
 };
-pub const L: RawPiece<'static> = RawPiece {
+pub const L: RawShape<'static> = RawShape {
     field: r#"
         . * . .
         . * . .
@@ -77,7 +89,7 @@ pub const L: RawPiece<'static> = RawPiece {
     ri: 1.0,
     rj: 1.5,
 };
-pub const J: RawPiece<'static> = RawPiece {
+pub const J: RawShape<'static> = RawShape {
     field: r#"
         . . * .
         . . * .
@@ -87,7 +99,7 @@ pub const J: RawPiece<'static> = RawPiece {
     ri: 1.0,
     rj: 1.5,
 };
-pub const T: RawPiece<'static> = RawPiece {
+pub const T: RawShape<'static> = RawShape {
     field: r#"
         . . . .
         * * * .
@@ -97,7 +109,7 @@ pub const T: RawPiece<'static> = RawPiece {
     ri: 1.5,
     rj: 1.0,
 };
-pub const S: RawPiece<'static> = RawPiece {
+pub const S: RawShape<'static> = RawShape {
     field: r#"
         . . . .
         . * * .
@@ -107,7 +119,7 @@ pub const S: RawPiece<'static> = RawPiece {
     ri: 1.5,
     rj: 1.0,
 };
-pub const Z: RawPiece<'static>  = RawPiece {
+pub const Z: RawShape<'static>  = RawShape {
     field: r#"
         . . . .
         * * . .
@@ -119,11 +131,11 @@ pub const Z: RawPiece<'static>  = RawPiece {
 };
 
 
-/// return the piece points relative of (0, 0) with parity
-pub fn build_piece(src: RawPiece<'_>) -> Piece {
+/// return the shape points relative of (0, 0) with parity
+pub fn build_piece(src: RawShape<'_>) -> Shape {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
-    // shift is needed to know how to round the piece after the rotation
+    // shift is needed to know how to round the shape after the rotation
     let mut shift_i = 0;
     let mut shift_j = 0;
     for line in src.field.trim_indent().split('\n') {
@@ -142,13 +154,13 @@ pub fn build_piece(src: RawPiece<'_>) -> Piece {
         }
         ci += 1;
     }
-    Piece { diffs, shift: Point(shift_i, shift_j) }
+    Shape { diffs, shift: Point(shift_i, shift_j) }
 }
 
-pub fn rotate(piece: &Piece, r: i8) -> Vec<Point> {
+pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
     // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
     let r = (r % 4 + 4) % 4;
-    let mut p = piece.clone();
+    let mut p = shape.clone();
     for _ in 0..r {
         for d in &mut p.diffs {
             // rotate counterclockwise (-1, -2) => (2, -1),
@@ -162,7 +174,7 @@ pub fn rotate(piece: &Piece, r: i8) -> Vec<Point> {
         p.shift.1 = p.shift.0;
         p.shift.0 = t;
     }
-    // shift and divide, so (0, 0) is the integer center of the rotated piece
+    // shift and divide, so (0, 0) is the integer center of the rotated shape
     for d in &mut p.diffs {
         d.0 = (d.0 - p.shift.0) / 2;
         d.1 = (d.1 - p.shift.1) / 2;
@@ -170,8 +182,8 @@ pub fn rotate(piece: &Piece, r: i8) -> Vec<Point> {
     p.diffs
 }
 
-pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option<Vec<Point>> {
-    let mut points = rotate(&piece, r);
+pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option<Vec<Point>> {
+    let mut points = rotate(&shape, r);
     for d in &points {
         let i = base.0 + d.0;
         let j = base.1 + d.1;
@@ -193,21 +205,8 @@ pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option
 }
 
 
-//struct Grid {
-//    grid: Vec<Vec<Cell>>,
-//}
-
-//struct Piece {
-//    template: Vec<i8>, // i8 == -128..127
-//    // rotation coordinates
-//    center_x: f32,
-//    center_y: f32,
-//}
 //
-//// pieces, and the rotation point
+//// shapes, and the rotation point
 //lazy_static! {
-//    static ref PIECES: Vec<Piece> = {
-//        let mut v: Vec<Piece> = Vec::with_capacity(10);
-//        v
-//    };
+//    static ref SHAPES: [Shape; 7] = { ... };
 //}

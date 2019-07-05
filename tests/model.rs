@@ -1,47 +1,47 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, build_piece, I, O, L, J, T, S, Z, Piece, Field, try_position, rotate};
+use tetris::model::{Point, build_piece, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate};
 
 #[test]
 fn test_conversion() {
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
         shift: Point(0, 1),
     };
     assert_eq!(expected, build_piece(I));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)],
         shift: Point(1, 1),
     };
     assert_eq!(expected, build_piece(O));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-2, -1), Point(0, -1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
     };
     assert_eq!(expected, build_piece(L));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-2, 1), Point(0, 1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
     };
     assert_eq!(expected, build_piece(J));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(-1, 2), Point(1, 0)],
         shift: Point(1, 0),
     };
     assert_eq!(expected, build_piece(T));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-1, 0), Point(-1, 2), Point(1, -2), Point(1, 0)],
         shift: Point(1, 0),
     };
     assert_eq!(expected, build_piece(S));
 
-    let expected = Piece {
+    let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(1, 0), Point(1, 2)],
         shift: Point(1, 0),
     };

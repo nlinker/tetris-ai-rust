@@ -20,9 +20,6 @@ use tetris::utils::Trim;
 //    cells
 //}
 
-
-
-
 fn main() {
     let t = build_piece(I);
     println!("{:?}", t);
