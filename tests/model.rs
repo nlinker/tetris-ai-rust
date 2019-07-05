@@ -57,12 +57,15 @@ fn test_rotate() {
 
     let expected = vec![Point(1, -1), Point(0, -1), Point(-1, -1), Point(0, 0)];
     assert_eq!(expected, rotate(&piece_t, 1));
+    assert_eq!(expected, rotate(&piece_t, -3));
 
     let expected = vec![Point(0, 1), Point(0, 0), Point(0, -1), Point(-1, 0)];
     assert_eq!(expected, rotate(&piece_t, 2));
+    assert_eq!(expected, rotate(&piece_t, -2));
 
     let expected = vec![Point(-1, 0), Point(0, 0), Point(1, 0), Point(0, -1)];
     assert_eq!(expected, rotate(&piece_t, 3));
+    assert_eq!(expected, rotate(&piece_t, -1));
 }
 
 #[test]
