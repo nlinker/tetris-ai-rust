@@ -20,9 +20,22 @@ pub struct Piece {
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
 /// Example:
 /// ```rust
-/// for i in 0..height {
-///     for j in 0..width {
+/// use tetris::model::Field;
+/// let field = Field {
+///     cells: vec![
+///         vec![0, 0, 0, 0],
+///         vec![0, 0, 0, 0],
+///         vec![0, 0, 0, 0],
+///         vec![0, 0, 0, 0],
+///         vec![0, 1, 1, 1],
+///     ],
+///     height: 5,
+///     width: 4,
+/// };
+/// for i in 0..field.height {
+///     for j in 0..field.width {
 ///         // ok to access field[i][j]
+///         println!("{}", field.cells[i][j]);
 ///     }
 /// }
 /// ```
@@ -162,6 +175,7 @@ pub fn try_position(field: &Field, base: &Point, piece: &Piece, r: i8) -> Option
     for d in &points {
         let i = base.0 + d.0;
         let j = base.1 + d.1;
+        println!("{:?}", (i, j));
         if i < 0 || field.height as i32 <= i {
             return None;
         } else if j < 0 || field.width as i32 <= j {

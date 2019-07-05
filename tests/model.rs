@@ -65,6 +65,7 @@ fn test_rotate() {
     assert_eq!(expected, rotate(&piece_t, 3));
 }
 
+#[test]
 fn test_try_position() {
     let field = Field {
         cells: vec![
@@ -72,8 +73,9 @@ fn test_try_position() {
             vec![0, 0, 0, 0],
             vec![0, 0, 0, 0],
             vec![0, 0, 0, 0],
+            vec![0, 1, 1, 1],
         ],
-        height: 4,
+        height: 5,
         width: 4,
     };
     let piece_i = convert_piece(I);
