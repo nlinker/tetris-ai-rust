@@ -6,6 +6,7 @@ pub struct RawShape<'a> {
     field: &'a str,
     ri: f32,
     rj: f32,
+    color: (u8, u8, u8),
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -15,18 +16,6 @@ pub struct Point(pub i32, pub i32);
 pub struct Shape {
     pub diffs: Vec<Point>,
     pub shift: Point,
-}
-
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum Color {
-    Cyan,
-    Blue,
-    Orange,
-    Yellow,
-    Lime,
-    Purple,
-    Red,
-    Grey,
 }
 
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
@@ -68,6 +57,7 @@ pub const I: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
+    color: (60, 199, 214),
 };
 pub const O: RawShape<'static> = RawShape {
     field: r#"
@@ -78,6 +68,7 @@ pub const O: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.5,
+    color: (251, 180, 20),
 };
 pub const L: RawShape<'static> = RawShape {
     field: r#"
@@ -88,6 +79,7 @@ pub const L: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
+    color: (57, 147, 208),
 };
 pub const J: RawShape<'static> = RawShape {
     field: r#"
@@ -98,6 +90,7 @@ pub const J: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
+    color: (237, 101, 47),
 };
 pub const T: RawShape<'static> = RawShape {
     field: r#"
@@ -108,6 +101,7 @@ pub const T: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
+    color: (176, 68, 151),
 };
 pub const S: RawShape<'static> = RawShape {
     field: r#"
@@ -118,6 +112,7 @@ pub const S: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
+    color: (232, 65, 56),
 };
 pub const Z: RawShape<'static>  = RawShape {
     field: r#"
@@ -128,6 +123,7 @@ pub const Z: RawShape<'static>  = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
+    color: (149, 196, 61),
 };
 
 
@@ -202,6 +198,14 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
         d.1 = base.1 + d.1;
     }
     Some(points)
+}
+
+pub enum Action {
+    Left,
+    Right,
+    Down,
+    RotateCW,  // clockwise
+    RotateCCW, // counterclockwise
 }
 
 
