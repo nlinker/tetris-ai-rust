@@ -1,8 +1,12 @@
 #![allow(unused)]
 
+#[macro_use]
+extern crate lazy_static;
+
 //const TEST: (String, Point) = ("xxx".into(), Point(0, 0));
-use tetris::model::{I, T, build_piece};
+use tetris::model::{I, T, build_shape};
 use tetris::utils::Trim;
+use std::collections::HashMap;
 
 //fn build_piece(p_str: &str) -> Vec<u8> {
 //    let mut cells: Vec<u8> = vec![0; 16];
@@ -20,7 +24,22 @@ use tetris::utils::Trim;
 //    cells
 //}
 
+lazy_static! {
+    pub static ref HASHMAP: HashMap<u32, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert(0, "hello");
+        m.insert(1, ",");
+        m.insert(2, " ");
+        m.insert(3, "world");
+        m
+    };
+    pub static ref COUNT: usize = HASHMAP.len();
+}
+
 fn main() {
-    let t = build_piece(I);
-    println!("{:?}", t);
+    // We dereference COUNT because it's type is &usize
+    println!("The map has {} entries.", *COUNT);
+
+    // Here we don't dereference with * because of Deref coercions
+    println!("The entry for `0` is \"{}\".", HASHMAP.get(&0).unwrap());
 }

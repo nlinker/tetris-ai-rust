@@ -1,7 +1,8 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, build_piece, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate};
+use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate};
+use tetris::model::SHAPES;
 
 #[test]
 fn test_conversion() {
@@ -9,48 +10,48 @@ fn test_conversion() {
         diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
         shift: Point(0, 1),
     };
-    assert_eq!(expected, build_piece(I));
+    assert_eq!(expected, build_shape(I));
 
     let expected = Shape {
         diffs: vec![Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)],
         shift: Point(1, 1),
     };
-    assert_eq!(expected, build_piece(O));
+    assert_eq!(expected, build_shape(O));
 
     let expected = Shape {
         diffs: vec![Point(-2, -1), Point(0, -1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
     };
-    assert_eq!(expected, build_piece(L));
+    assert_eq!(expected, build_shape(L));
 
     let expected = Shape {
         diffs: vec![Point(-2, 1), Point(0, 1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
     };
-    assert_eq!(expected, build_piece(J));
+    assert_eq!(expected, build_shape(J));
 
     let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(-1, 2), Point(1, 0)],
         shift: Point(1, 0),
     };
-    assert_eq!(expected, build_piece(T));
+    assert_eq!(expected, build_shape(T));
 
     let expected = Shape {
         diffs: vec![Point(-1, 0), Point(-1, 2), Point(1, -2), Point(1, 0)],
         shift: Point(1, 0),
     };
-    assert_eq!(expected, build_piece(S));
+    assert_eq!(expected, build_shape(S));
 
     let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(1, 0), Point(1, 2)],
         shift: Point(1, 0),
     };
-    assert_eq!(expected, build_piece(Z));
+    assert_eq!(expected, build_shape(Z));
 }
 
 #[test]
 fn test_rotate() {
-    let piece_t = build_piece(T);
+    let piece_t = build_shape(T);
 
     let expected = vec![Point(-1, -1), Point(-1, 0), Point(-1, 1), Point(0, 0)];
     assert_eq!(expected, rotate(&piece_t, 0));
@@ -81,7 +82,7 @@ fn test_try_position() {
         height: 5,
         width: 4,
     };
-    let piece_i = build_piece(I);
+    let piece_i = build_shape(I);
 
     let expected = Some(vec![Point(1, 0), Point(1, 1), Point(1, 2), Point(1, 3)]);
     assert_eq!(expected, try_position(&field, &Point(1, 2), &piece_i, 0));
@@ -100,8 +101,8 @@ fn test_try_position() {
     assert_eq!(expected, try_position(&field, &Point(3, 2), &piece_i, 1));
 }
 
-pub fn convert_field(_: &str) -> Field {
-    // TODO implement this to
+pub fn build_field(_: &str) -> Field {
+    // TODO implement this to be similar to the build_shape
     Field {
         cells: vec![],
         height: 0,

@@ -1,4 +1,5 @@
 use crate::utils::Trim;
+use lazy_static;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -47,6 +48,25 @@ pub struct Field {
     pub width: usize,
 }
 
+pub enum Action {
+    Left,
+    Right,
+    Down,
+    RotateCW,  // clockwise
+    RotateCCW, // counterclockwise
+}
+
+lazy_static! {
+    pub static ref SHAPES: [Shape; 7] = [
+        build_shape(I),
+        build_shape(O),
+        build_shape(L),
+        build_shape(J),
+        build_shape(T),
+        build_shape(S),
+        build_shape(Z),
+    ];
+}
 
 pub const I: RawShape<'static> = RawShape {
     field: r#"
@@ -128,7 +148,7 @@ pub const Z: RawShape<'static>  = RawShape {
 
 
 /// return the shape points relative of (0, 0) with parity
-pub fn build_piece(src: RawShape<'_>) -> Shape {
+pub fn build_shape(src: RawShape<'_>) -> Shape {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
     // shift is needed to know how to round the shape after the rotation
@@ -199,18 +219,3 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
     }
     Some(points)
 }
-
-pub enum Action {
-    Left,
-    Right,
-    Down,
-    RotateCW,  // clockwise
-    RotateCCW, // counterclockwise
-}
-
-
-//
-//// shapes, and the rotation point
-//lazy_static! {
-//    static ref SHAPES: [Shape; 7] = { ... };
-//}
