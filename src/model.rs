@@ -1,5 +1,9 @@
 use crate::utils::Trim;
 use lazy_static;
+use std::cell::RefCell;
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::Duration;
+use rand::prelude::StdRng;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -37,11 +41,13 @@ pub struct Shape {
 /// for i in 0..field.height {
 ///     for j in 0..field.width {
 ///         // ok to access field[i][j]
+///         // field[i][j] == 0 corresponds to empty
+///         // field[i][j] == 1..7 corresponds to [I, O, L, J, T, S, Z], see SHAPES
 ///         println!("{}", field.cells[i][j]);
 ///     }
 /// }
 /// ```
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Field {
     pub cells: Vec<Vec<u8>>,
     pub height: usize,
@@ -54,6 +60,15 @@ pub enum Action {
     Down,
     RotateCW,  // clockwise
     RotateCCW, // counterclockwise
+    Tick,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct GameState<'a> {
+    field: &'a Field,
+    base: Point,
+    curr_shape_idx: usize,
+    next_shape_idx: usize,
 }
 
 lazy_static! {
@@ -218,4 +233,24 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
         d.1 = base.1 + d.1;
     }
     Some(points)
+}
+
+pub fn initial_state<'a>(height: usize, width: usize, seed: Option<u64>) -> Option<GameState<'a>> {
+    let random = if let Some(seed) = seed {
+        StdRng::from_seed(seed)
+    } else {
+        let now = SystemTime::now();
+        let seed = now.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+        StdRng::from_seed(seed)
+    };
+    let field = Field {
+        cells: vec![vec![0; width]; height],
+        height,
+        width,
+    };
+    None
+}
+
+pub fn step(gs: &mut GameState, action: Action) {
+
 }
