@@ -1,6 +1,8 @@
 use crate::utils::Trim;
 use lazy_static;
 use std::cell::RefCell;
+use rand_xoshiro::Xoroshiro64StarStar;
+use rand::{SeedableRng, Rng};
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -233,11 +235,11 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
 }
 
 pub fn initial_state<'a>(height: usize, width: usize, seed: Option<u64>) -> Option<GameState<'a>> {
-//    let random = if let Some(seed) = seed {
-//        SmallRng::from_seed(seed)
-//    } else {
-//        SmallRng::from_entropy()
-//    };
+    let random = if let Some(seed) = seed {
+        Xoroshiro64StarStar::seed_from_u64(seed)
+    } else {
+        Xoroshiro64StarStar::from_entropy()
+    };
     let field = Field {
         cells: vec![vec![0; width]; height],
         height,

@@ -7,7 +7,6 @@ extern crate lazy_static;
 //const TEST: (String, Point) = ("xxx".into(), Point(0, 0));
 use tetris::model::{SHAPES, Shape, initial_state};
 use rand_xoshiro::Xoroshiro64StarStar;
-use rand::rngs::StdRng;
 use rand::{SeedableRng, Rng};
 
 //fn main() {
@@ -22,7 +21,5 @@ use rand::{SeedableRng, Rng};
 
 fn main() {
     let mut rng = Xoroshiro64StarStar::seed_from_u64(69);
-    println!("{}", (rng.gen(): f32));
-    let mut rng = StdRng::seed_from_u64(69);
     println!("{}", rng.gen(): f32);
 }
