@@ -1,9 +1,6 @@
 use crate::utils::Trim;
 use lazy_static;
 use std::cell::RefCell;
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::time::Duration;
-use rand::prelude::StdRng;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -236,13 +233,11 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
 }
 
 pub fn initial_state<'a>(height: usize, width: usize, seed: Option<u64>) -> Option<GameState<'a>> {
-    let random = if let Some(seed) = seed {
-        StdRng::from_seed(seed)
-    } else {
-        let now = SystemTime::now();
-        let seed = now.duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
-        StdRng::from_seed(seed)
-    };
+//    let random = if let Some(seed) = seed {
+//        SmallRng::from_seed(seed)
+//    } else {
+//        SmallRng::from_entropy()
+//    };
     let field = Field {
         cells: vec![vec![0; width]; height],
         height,

@@ -1,11 +1,14 @@
 #![allow(unused)]
+#![feature(type_ascription)]
 
 #[macro_use]
 extern crate lazy_static;
 
 //const TEST: (String, Point) = ("xxx".into(), Point(0, 0));
 use tetris::model::{SHAPES, Shape, initial_state};
-use xorshift128plus::XorShift128Plus;
+use rand_xoshiro::Xoroshiro64StarStar;
+use rand::rngs::StdRng;
+use rand::{SeedableRng, Rng};
 
 //fn main() {
 //    //for shape in &*SHAPES {
@@ -18,6 +21,8 @@ use xorshift128plus::XorShift128Plus;
 
 
 fn main() {
-    let mut random = XorShift128Plus::from_u64(69);
-    println!("{}", random.next());
+    let mut rng = Xoroshiro64StarStar::seed_from_u64(69);
+    println!("{}", (rng.gen(): f32));
+    let mut rng = StdRng::seed_from_u64(69);
+    println!("{}", rng.gen(): f32);
 }
