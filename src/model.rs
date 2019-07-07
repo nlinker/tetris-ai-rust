@@ -69,6 +69,8 @@ pub enum Action {
 pub struct GameState {
     field: Field,
     base: Point,
+    rotation: i32,
+    curr_cells: Vec<Point>,
     curr_shape_idx: usize,
     next_shape_idx: usize,
 }
@@ -163,117 +165,49 @@ pub const Z: RawShape<'static>  = RawShape {
     color: "white",
 };
 
-/// return the shape points relative of (0, 0) with parity
-pub fn build_shape(src: RawShape<'_>) -> Shape {
-    let mut diffs: Vec<Point> = Vec::with_capacity(4);
-    let mut ci = 0;
-    // shift is needed to know how to round the shape after the rotation
-    let mut shift_i = 0;
-    let mut shift_j = 0;
-    for line in src.field.trim_indent().split('\n') {
-        let mut cj = 0;
-        for c in line.chars() {
-            if c == '*' {
-                let i = (2.0 * ((ci as f32) - src.ri)).trunc() as i32;
-                let j = (2.0 * ((cj as f32) - src.rj)).trunc() as i32;
-                diffs.push(Point(i, j));
-                if i % 2 == 1 { shift_i = 1; }
-                if j % 2 == 1 { shift_j = 1; }
-                cj += 1;
-            } else if c == '.' {
-                cj += 1;
-            }
-        }
-        ci += 1;
-    }
-    let style = Style::from_dotted_str(src.color);
-    Shape { diffs, shift: Point(shift_i, shift_j), style }
-}
-
-pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
-    // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
-    let r = (r % 4 + 4) % 4;
-    let mut p = shape.clone();
-    for _ in 0..r {
-        for d in &mut p.diffs {
-            // rotate counterclockwise (-1, -2) => (2, -1),
-            // i.e. negate the second coordinate and then swap
-            let t = -d.1;
-            d.1 = d.0;
-            d.0 = t;
-        }
-        // swap shift
-        let t = p.shift.1;
-        p.shift.1 = p.shift.0;
-        p.shift.0 = t;
-    }
-    // shift and divide, so (0, 0) is the integer center of the rotated shape
-    for d in &mut p.diffs {
-        d.0 = (d.0 - p.shift.0) / 2;
-        d.1 = (d.1 - p.shift.1) / 2;
-    }
-    p.diffs
-}
-
-pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option<Vec<Point>> {
-    let mut points = rotate(&shape, r);
-    for d in &points {
-        let i = base.0 + d.0;
-        let j = base.1 + d.1;
-        if i < 0 || field.height as i32 <= i {
-            return None;
-        } else if j < 0 || field.width as i32 <= j {
-            return None;
-        } else if field.cells[i as usize][j as usize] != 0 {
-            return None;
-        }
-    }
-    // shift points w.r.t. base
-    for d in &mut points {
-        d.0 = base.0 + d.0;
-        d.1 = base.1 + d.1;
-    }
-    Some(points)
-}
-
-pub fn put_position(field: &mut Field, shape_idx: usize, xs: Vec<Point>) {
-    for x in xs {
-        field.cells[x.0 as usize][x.1 as usize] = (shape_idx + 1) as u8;
-    }
-}
-
-pub fn initial_state(height: usize, width: usize, seed: Option<u64>) -> GameState {
-    let mut random = if let Some(seed) = seed {
-        Xoroshiro128StarStar::seed_from_u64(seed)
-    } else {
-        Xoroshiro128StarStar::from_entropy()
-    };
-    let mut field = Field {
-        cells: vec![vec![0; width]; height],
-        height,
-        width,
-    };
-    let curr_shape_idx = random.gen_range(0, SHAPES.len());
-    let next_shape_idx = random.gen_range(0, SHAPES.len());
-    let base = Point(1, width as i32 / 2);
-    if let Some(xs) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
-        put_position(&mut field, curr_shape_idx, xs);
-        GameState {
-            field,
-            base,
-            curr_shape_idx,
-            next_shape_idx,
-        }
-    } else {
-        panic!("Impossible initial state")
-    }
-}
-
-pub fn step(gs: &mut GameState, action: Action) {
-    // TODO implement this
-}
-
 impl GameState {
+    pub fn initial(height: usize, width: usize, seed: Option<u64>) -> GameState {
+        let mut random = if let Some(seed) = seed {
+            Xoroshiro128StarStar::seed_from_u64(seed)
+        } else {
+            Xoroshiro128StarStar::from_entropy()
+        };
+        let mut field = Field {
+            cells: vec![vec![0; width]; height],
+            height,
+            width,
+        };
+        let curr_shape_idx = random.gen_range(0, SHAPES.len());
+        let next_shape_idx = random.gen_range(0, SHAPES.len());
+        let base = Point(1, width as i32 / 2);
+        let rotation = 0;
+        if let Some(curr_points) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
+            put_position(&mut field, curr_shape_idx, &curr_points[..]);
+            GameState {
+                field,
+                base,
+                rotation,
+                curr_cells: curr_points,
+                curr_shape_idx,
+                next_shape_idx,
+            }
+        } else {
+            panic!("Impossible initial state")
+        }
+    }
+
+
+    pub fn step(&mut self, action: Action) {
+        match action {
+            Tick => {
+                // clear current
+                // try the same base.1 + 1
+                // draw current
+            },
+            _ => unreachable!("implement this"),
+        }
+    }
+
     pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool) -> String {
         let m = self.field.height;
         let n = self.field.width;
@@ -320,6 +254,85 @@ impl GameState {
             }
         }
         result
+    }
+}
+
+/// return the shape points relative of (0, 0) with parity
+pub fn build_shape(src: RawShape<'_>) -> Shape {
+    let mut diffs: Vec<Point> = Vec::with_capacity(4);
+    let mut ci = 0;
+    // shift is needed to know how to round the shape after the rotation
+    let mut shift_i = 0;
+    let mut shift_j = 0;
+    for line in src.field.trim_indent().split('\n') {
+        let mut cj = 0;
+        for c in line.chars() {
+            if c == '*' {
+                let i = (2.0 * ((ci as f32) - src.ri)).trunc() as i32;
+                let j = (2.0 * ((cj as f32) - src.rj)).trunc() as i32;
+                diffs.push(Point(i, j));
+                if i % 2 == 1 { shift_i = 1; }
+                if j % 2 == 1 { shift_j = 1; }
+                cj += 1;
+            } else if c == '.' {
+                cj += 1;
+            }
+        }
+        ci += 1;
+    }
+    let style = Style::from_dotted_str(src.color);
+    Shape { diffs, shift: Point(shift_i, shift_j), style }
+}
+
+pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option<Vec<Point>> {
+    let mut points = rotate(&shape, r);
+    for d in &points {
+        let i = base.0 + d.0;
+        let j = base.1 + d.1;
+        if i < 0 || field.height as i32 <= i {
+            return None;
+        } else if j < 0 || field.width as i32 <= j {
+            return None;
+        } else if field.cells[i as usize][j as usize] != 0 {
+            return None;
+        }
+    }
+    // shift points w.r.t. base
+    for d in &mut points {
+        d.0 = base.0 + d.0;
+        d.1 = base.1 + d.1;
+    }
+    Some(points)
+}
+
+pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
+    // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
+    let r = (r % 4 + 4) % 4;
+    let mut p = shape.clone();
+    for _ in 0..r {
+        for d in &mut p.diffs {
+            // rotate counterclockwise (-1, -2) => (2, -1),
+            // i.e. negate the second coordinate and then swap
+            let t = -d.1;
+            d.1 = d.0;
+            d.0 = t;
+        }
+        // swap shift
+        let t = p.shift.1;
+        p.shift.1 = p.shift.0;
+        p.shift.0 = t;
+    }
+    // shift and divide, so (0, 0) is the integer center of the rotated shape
+    for d in &mut p.diffs {
+        d.0 = (d.0 - p.shift.0) / 2;
+        d.1 = (d.1 - p.shift.1) / 2;
+    }
+    p.diffs
+}
+
+pub fn put_position(field: &mut Field, shape_idx: usize, points: &[Point]) {
+    for p in points {
+        field.cells[p.0 as usize][p.1 as usize] = (shape_idx + 1) as u8;
     }
 }
 

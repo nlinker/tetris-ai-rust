@@ -1,50 +1,57 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate, initial_state};
-use tetris::model::SHAPES;
+use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate, GameState};
+use console::Style;
 
 #[test]
 fn test_conversion() {
     let expected = Shape {
         diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
         shift: Point(0, 1),
+        style: Style::from_dotted_str("red"),
     };
     assert_eq!(expected, build_shape(I));
 
     let expected = Shape {
         diffs: vec![Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)],
         shift: Point(1, 1),
+        style: Style::from_dotted_str("green"),
     };
     assert_eq!(expected, build_shape(O));
 
     let expected = Shape {
         diffs: vec![Point(-2, -1), Point(0, -1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
+        style: Style::from_dotted_str("yellow"),
     };
     assert_eq!(expected, build_shape(L));
 
     let expected = Shape {
         diffs: vec![Point(-2, 1), Point(0, 1), Point(2, -1), Point(2, 1)],
         shift: Point(0, 1),
+        style: Style::from_dotted_str("blue"),
     };
     assert_eq!(expected, build_shape(J));
 
     let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(-1, 2), Point(1, 0)],
         shift: Point(1, 0),
+        style: Style::from_dotted_str("magenta"),
     };
     assert_eq!(expected, build_shape(T));
 
     let expected = Shape {
         diffs: vec![Point(-1, 0), Point(-1, 2), Point(1, -2), Point(1, 0)],
         shift: Point(1, 0),
+        style: Style::from_dotted_str("cyan"),
     };
     assert_eq!(expected, build_shape(S));
 
     let expected = Shape {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(1, 0), Point(1, 2)],
         shift: Point(1, 0),
+        style: Style::from_dotted_str("white"),
     };
     assert_eq!(expected, build_shape(Z));
 }
@@ -103,7 +110,7 @@ fn test_try_position() {
 
 #[test]
 fn test_move() {
-    let mut gs = initial_state(20, 10, Some(66));
+    let gs = GameState::initial(20, 10, Some(66));
     // curr_shape_idx = 3
     println!("{}", gs);
     assert_eq!(1, 1);
