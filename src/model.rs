@@ -1,17 +1,18 @@
 use crate::utils::Trim;
 use lazy_static;
-use std::cell::RefCell;
+use console::Style;
 use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng};
 use std::fmt;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
+/// `color` must correspond to
 pub struct RawShape<'a> {
     field: &'a str,
     ri: f32,
     rj: f32,
-    color: (u8, u8, u8),
+    color: &'a str,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -21,6 +22,7 @@ pub struct Point(pub i32, pub i32);
 pub struct Shape {
     pub diffs: Vec<Point>,
     pub shift: Point,
+    pub style: Style,
 }
 
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
@@ -92,7 +94,7 @@ pub const I: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
-    color: (60, 199, 214),
+    color: "red",
 };
 pub const O: RawShape<'static> = RawShape {
     field: r#"
@@ -103,7 +105,7 @@ pub const O: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.5,
-    color: (251, 180, 20),
+    color: "green",
 };
 pub const L: RawShape<'static> = RawShape {
     field: r#"
@@ -114,7 +116,7 @@ pub const L: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
-    color: (57, 147, 208),
+    color: "yellow",
 };
 pub const J: RawShape<'static> = RawShape {
     field: r#"
@@ -125,7 +127,7 @@ pub const J: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
-    color: (237, 101, 47),
+    color: "blue",
 };
 pub const T: RawShape<'static> = RawShape {
     field: r#"
@@ -136,7 +138,7 @@ pub const T: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: (176, 68, 151),
+    color: "magenta",
 };
 pub const S: RawShape<'static> = RawShape {
     field: r#"
@@ -147,7 +149,7 @@ pub const S: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: (232, 65, 56),
+    color: "cyan",
 };
 pub const Z: RawShape<'static>  = RawShape {
     field: r#"
@@ -158,45 +160,8 @@ pub const Z: RawShape<'static>  = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: (149, 196, 61),
+    color: "white",
 };
-
-
-impl GameState {
-    pub fn format_string(&self) -> String {
-        let m = self.field.height;
-        let n = self.field.width;
-        let capacity = m * (2 * n + 1) + 2;
-        let mut result = String::with_capacity(capacity);
-        let mut layer0 = vec![vec![' ' as u8; n]; m];
-        let mut layer1 = vec![vec!['.' as u8; n]; m];
-        for i in 0..m {
-            for j in 0..n {
-                match self.field.cells[i][j] {
-                    0 => layer0[i][j] = ' ' as u8,
-                    c => layer0[i][j] = ('0' as u8) + c - 1,
-                }
-            }
-        }
-        // now put all the stuff
-        for i in 0..m {
-            for j in 0..n {
-                result.push(layer0[i][j] as char);
-                result.push(layer1[i][j] as char);
-            }
-            // make sure there is no hanging \n
-            if i != m - 1 { result.push('\n'); }
-        }
-        result
-    }
-}
-
-impl fmt::Display for GameState {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(&self.format_string());
-        Ok(())
-    }
-}
 
 /// return the shape points relative of (0, 0) with parity
 pub fn build_shape(src: RawShape<'_>) -> Shape {
@@ -221,7 +186,8 @@ pub fn build_shape(src: RawShape<'_>) -> Shape {
         }
         ci += 1;
     }
-    Shape { diffs, shift: Point(shift_i, shift_j) }
+    let style = Style::from_dotted_str(src.color);
+    Shape { diffs, shift: Point(shift_i, shift_j), style }
 }
 
 pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
@@ -270,6 +236,12 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
     Some(points)
 }
 
+pub fn put_position(field: &mut Field, shape_idx: usize, xs: Vec<Point>) {
+    for x in xs {
+        field.cells[x.0 as usize][x.1 as usize] = (shape_idx + 1) as u8;
+    }
+}
+
 pub fn initial_state(height: usize, width: usize, seed: Option<u64>) -> GameState {
     let mut random = if let Some(seed) = seed {
         Xoroshiro128StarStar::seed_from_u64(seed)
@@ -285,9 +257,7 @@ pub fn initial_state(height: usize, width: usize, seed: Option<u64>) -> GameStat
     let next_shape_idx = random.gen_range(0, SHAPES.len());
     let base = Point(1, width as i32 / 2);
     if let Some(xs) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
-        for x in xs {
-            field.cells[x.0 as usize][x.1 as usize] = (curr_shape_idx + 1) as u8;
-        }
+        put_position(&mut field, curr_shape_idx, xs);
         GameState {
             field,
             base,
@@ -300,5 +270,62 @@ pub fn initial_state(height: usize, width: usize, seed: Option<u64>) -> GameStat
 }
 
 pub fn step(gs: &mut GameState, action: Action) {
+    // TODO implement this
+}
 
+impl GameState {
+    pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool) -> String {
+        let m = self.field.height;
+        let n = self.field.width;
+        let mut result = String::with_capacity(m * (2 * n + 1) + 2);
+        // now put all the stuff
+        let empty_style = Style::new();
+        let mut current_piece: String = String::with_capacity(n * 4);
+        let mut current_style = &empty_style;
+        let mut prev_symbol: Option<char> = None;
+        let mut current_symbol: Option<char> = None;
+
+        result.push_str(&format!("current shape: {}\n", &SHAPES[self.curr_shape_idx]
+            .style.apply_to(self.curr_shape_idx.to_string())));
+        result.push_str(&format!("next shape: {}\n", &SHAPES[self.next_shape_idx]
+            .style.apply_to(self.next_shape_idx.to_string())));
+        for i in 0..m {
+            for j in 0..n {
+                // intersperse the line with spaces
+                if j != 0 {
+                    current_piece.push(' ');
+                }
+
+                current_symbol = if self.field.cells[i][j] == 0 { Some('.') } else { Some('*') };
+                if current_symbol != prev_symbol {
+                    result.push_str(&current_style.apply_to(&current_piece).to_string());
+                    current_piece.clear();
+                }
+                match self.field.cells[i][j] {
+                    0 => current_style = &empty_style,
+                    k => current_style = &SHAPES[k as usize - 1].style
+                }
+                if let Some(c) = current_symbol {
+                    current_piece.push(c);
+                }
+                prev_symbol = current_symbol;
+            }
+            current_piece.push('\n');
+            result.push_str(&current_style.apply_to(&current_piece).to_string());
+            current_piece.clear();
+        }
+        if rewind {
+            for k in 0..(m + 2) {
+                result.push_str("\x1B[A") // up
+            }
+        }
+        result
+    }
+}
+
+impl fmt::Display for GameState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str(&self.prettify_game_state(false, false));
+        Ok(())
+    }
 }

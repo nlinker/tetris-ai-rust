@@ -10,5 +10,5 @@ use tetris::model::{SHAPES, Shape, initial_state};
 fn main() {
     let mut gs = initial_state(15, 10, Some(68));
     // curr_shape_idx = 3
-    println!("{}", gs);
+    println!("{}", gs.prettify_game_state(true, true));
 }
