@@ -1,7 +1,7 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate};
+use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate, initial_state};
 use tetris::model::SHAPES;
 
 #[test]
@@ -100,6 +100,15 @@ fn test_try_position() {
     let expected = None;
     assert_eq!(expected, try_position(&field, &Point(3, 2), &piece_i, 1));
 }
+
+#[test]
+fn test_move() {
+    let mut gs = initial_state(20, 10, Some(66));
+    // curr_shape_idx = 3
+    println!("{}", gs);
+    assert_eq!(1, 1);
+}
+
 
 pub fn build_field(_: &str) -> Field {
     // TODO implement this to be similar to the build_shape

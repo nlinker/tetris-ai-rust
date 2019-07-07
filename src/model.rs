@@ -1,8 +1,9 @@
 use crate::utils::Trim;
 use lazy_static;
 use std::cell::RefCell;
-use rand_xoshiro::Xoroshiro64StarStar;
+use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng};
+use std::fmt;
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -63,8 +64,8 @@ pub enum Action {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct GameState<'a> {
-    field: &'a Field,
+pub struct GameState {
+    field: Field,
     base: Point,
     curr_shape_idx: usize,
     next_shape_idx: usize,
@@ -161,6 +162,42 @@ pub const Z: RawShape<'static>  = RawShape {
 };
 
 
+impl GameState {
+    pub fn format_string(&self) -> String {
+        let m = self.field.height;
+        let n = self.field.width;
+        let capacity = m * (2 * n + 1) + 2;
+        let mut result = String::with_capacity(capacity);
+        let mut layer0 = vec![vec![' ' as u8; n]; m];
+        let mut layer1 = vec![vec!['.' as u8; n]; m];
+        for i in 0..m {
+            for j in 0..n {
+                match self.field.cells[i][j] {
+                    0 => layer0[i][j] = ' ' as u8,
+                    c => layer0[i][j] = ('0' as u8) + c - 1,
+                }
+            }
+        }
+        // now put all the stuff
+        for i in 0..m {
+            for j in 0..n {
+                result.push(layer0[i][j] as char);
+                result.push(layer1[i][j] as char);
+            }
+            // make sure there is no hanging \n
+            if i != m - 1 { result.push('\n'); }
+        }
+        result
+    }
+}
+
+impl fmt::Display for GameState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.write_str(&self.format_string());
+        Ok(())
+    }
+}
+
 /// return the shape points relative of (0, 0) with parity
 pub fn build_shape(src: RawShape<'_>) -> Shape {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
@@ -217,7 +254,6 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
     for d in &points {
         let i = base.0 + d.0;
         let j = base.1 + d.1;
-        println!("{:?}", (i, j));
         if i < 0 || field.height as i32 <= i {
             return None;
         } else if j < 0 || field.width as i32 <= j {
@@ -234,18 +270,33 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
     Some(points)
 }
 
-pub fn initial_state<'a>(height: usize, width: usize, seed: Option<u64>) -> Option<GameState<'a>> {
-    let random = if let Some(seed) = seed {
-        Xoroshiro64StarStar::seed_from_u64(seed)
+pub fn initial_state(height: usize, width: usize, seed: Option<u64>) -> GameState {
+    let mut random = if let Some(seed) = seed {
+        Xoroshiro128StarStar::seed_from_u64(seed)
     } else {
-        Xoroshiro64StarStar::from_entropy()
+        Xoroshiro128StarStar::from_entropy()
     };
-    let field = Field {
+    let mut field = Field {
         cells: vec![vec![0; width]; height],
         height,
         width,
     };
-    None
+    let curr_shape_idx = random.gen_range(0, SHAPES.len());
+    let next_shape_idx = random.gen_range(0, SHAPES.len());
+    let base = Point(1, width as i32 / 2);
+    if let Some(xs) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
+        for x in xs {
+            field.cells[x.0 as usize][x.1 as usize] = (curr_shape_idx + 1) as u8;
+        }
+        GameState {
+            field,
+            base,
+            curr_shape_idx,
+            next_shape_idx,
+        }
+    } else {
+        panic!("Impossible initial state")
+    }
 }
 
 pub fn step(gs: &mut GameState, action: Action) {
