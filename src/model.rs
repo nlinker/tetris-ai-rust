@@ -138,43 +138,48 @@ impl GameState {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
-        // now put all the stuff
-        let empty_style = Style::new();
-        let mut current_piece: String = String::with_capacity(n * 4);
-        let mut current_style = &empty_style;
-        let mut prev_symbol: Option<u8> = None;
-        let mut current_symbol: Option<u8> = None;
-
         result.push_str(&format!("current shape: {}\n", &SHAPES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
         result.push_str(&format!("next shape: {}\n", &SHAPES[self.next_shape_idx]
             .style.apply_to(self.next_shape_idx.to_string())));
+        // now put all the stuff
+        let empty_style = Style::new();
+        let mut curr_piece: String = String::with_capacity(n * 4);
+        let mut curr_style = &empty_style;
+        let mut prev_symbol: Option<u8> = None;
+        let mut curr_symbol: Option<u8> = None;
+
         for i in 0..m {
+            curr_piece.clear();
+            curr_style = &empty_style;
+            prev_symbol = None;
             for j in 0..n {
-                // intersperse the line with spaces
+                // |000|1111|22222|33|
+                // ^   ^    ^     ^  ^
+                // each line subdivides by groups, and on each boundary we
+                // output the previous group and calculate the style
                 if j != 0 {
-                    current_piece.push(' ');
+                    // intersperse the line with spaces
+                    curr_piece.push(' ');
                 }
                 let cell = self.field.cells[i][j];
-                current_symbol = Some(cell);
-                if current_symbol != prev_symbol {
-                    result.push_str(&current_style.apply_to(&current_piece).to_string());
-                    current_piece.clear();
-                } else {
-                    current_piece.push(if cell == 0 { '.' } else { '*' });
+                curr_symbol = Some(cell);
 
+                if curr_symbol != prev_symbol {
+                    // a boundary found
+                    if prev_symbol.is_some() {
+                        result.push_str(&curr_style.apply_to(&curr_piece).to_string());
+                        curr_piece.clear();
+                    }
+                    curr_style = if cell == 0 { &empty_style } else { &SHAPES[cell as usize - 1].style };
                 }
 
-                match cell {
-                    0 => current_style = &empty_style,
-                    k => current_style = &SHAPES[k as usize - 1].style,
-                }
-                prev_symbol = current_symbol;
+                curr_piece.push(if cell == 0 { '.' } else { '*' });
+                prev_symbol = curr_symbol;
             }
             // finish the current line
-            current_piece.push('\n');
-            result.push_str(&current_style.apply_to(&current_piece).to_string());
-            current_piece.clear();
+            result.push_str(&curr_style.apply_to(&curr_piece).to_string());
+            result.push('\n');
         }
         if rewind {
             for _ in 0..(m + 3) {
