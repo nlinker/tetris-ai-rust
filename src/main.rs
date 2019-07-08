@@ -18,7 +18,7 @@ fn main() {
 
     let mut gs = GameState::initial(20, 16, Some(68));
     for k in 0..1000 {
-        gs.step(Action::Tick);
+        if gs.step(Action::Tick) { break; }
         match k % 2 {
             0 => {
                 for _ in 0..rng.gen_range(1, 8) {

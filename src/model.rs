@@ -127,7 +127,10 @@ impl GameState {
         draw_shape(&mut self.field, &self.curr_cells, self.curr_shape_idx);
     }
 
-    pub fn step(&mut self, action: Action) {
+    pub fn step(&mut self, action: Action) -> bool {
+        if self.game_over {
+            return true;
+        }
         match action {
             Action::Tick => {
                 // clear current
@@ -152,8 +155,7 @@ impl GameState {
                         }
                         self.draw_current_shape();
                     } else {
-                        // TODO end of game
-                        panic!(self.prettify_game_state(false, false));
+                        self.game_over = true;
                     }
                 }
             },
@@ -207,6 +209,7 @@ impl GameState {
             }
             _ => unreachable!("implement this"),
         }
+        return false;
     }
 
     pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool) -> String {
