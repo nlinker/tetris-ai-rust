@@ -11,3 +11,6 @@ cargo install cargo-tree
 ```
 
 https://tetris.fandom.com/wiki/Tetris_Guideline
+
+https://tetris.fandom.com/wiki/SRS, especially
+[Wall kicks](https://tetris.fandom.com/wiki/SRS?section=3)
