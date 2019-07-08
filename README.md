@@ -4,8 +4,10 @@ RL stands for Reinforcement Learning.
 
 ## Installation and run
 
-## Useful commands
+## Useful stuff
 
 ```bash
 cargo install cargo-tree
 ```
+
+https://tetris.fandom.com/wiki/Tetris_Guideline

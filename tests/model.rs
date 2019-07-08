@@ -1,65 +1,65 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, Shape, Field, try_position, rotate, GameState};
-use tetris::shapes::{build_shape, I, O, L, J, T, S, Z};
+use tetris::model::{Point, Tetrimino, Field, try_position, rotate, GameState};
+use tetris::tetrimino::{build_tetrimino, I, O, L, J, T, S, Z};
 use console::Style;
 
 #[test]
 fn test_conversion() {
-    let expected = Shape {
+    let expected = Tetrimino {
         diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
         shift: Point(0, 1),
-        style: Style::from_dotted_str("red"),
+        style: Style::from_dotted_str("cyan.bold"),
     };
-    assert_eq!(expected, build_shape(I));
+    assert_eq!(expected, build_tetrimino(I));
 
-    let expected = Shape {
+    let expected = Tetrimino {
         diffs: vec![Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)],
         shift: Point(1, 1),
-        style: Style::from_dotted_str("green"),
+        style: Style::from_dotted_str("yellow.bold"),
     };
-    assert_eq!(expected, build_shape(O));
+    assert_eq!(expected, build_tetrimino(O));
 
-    let expected = Shape {
-        diffs: vec![Point(-2, -1), Point(0, -1), Point(2, -1), Point(2, 1)],
-        shift: Point(0, 1),
-        style: Style::from_dotted_str("yellow"),
-    };
-    assert_eq!(expected, build_shape(L));
-
-    let expected = Shape {
-        diffs: vec![Point(-2, 1), Point(0, 1), Point(2, -1), Point(2, 1)],
-        shift: Point(0, 1),
-        style: Style::from_dotted_str("blue"),
-    };
-    assert_eq!(expected, build_shape(J));
-
-    let expected = Shape {
+    let expected = Tetrimino {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(-1, 2), Point(1, 0)],
         shift: Point(1, 0),
-        style: Style::from_dotted_str("magenta"),
+        style: Style::from_dotted_str("magenta.bold"),
     };
-    assert_eq!(expected, build_shape(T));
+    assert_eq!(expected, build_tetrimino(T));
 
-    let expected = Shape {
+    let expected = Tetrimino {
         diffs: vec![Point(-1, 0), Point(-1, 2), Point(1, -2), Point(1, 0)],
         shift: Point(1, 0),
-        style: Style::from_dotted_str("cyan"),
+        style: Style::from_dotted_str("green.bold"),
     };
-    assert_eq!(expected, build_shape(S));
+    assert_eq!(expected, build_tetrimino(S));
 
-    let expected = Shape {
+    let expected = Tetrimino {
         diffs: vec![Point(-1, -2), Point(-1, 0), Point(1, 0), Point(1, 2)],
         shift: Point(1, 0),
-        style: Style::from_dotted_str("white"),
+        style: Style::from_dotted_str("red.bold"),
     };
-    assert_eq!(expected, build_shape(Z));
+    assert_eq!(expected, build_tetrimino(Z));
+
+    let expected = Tetrimino {
+        diffs: vec![Point(-2, 1), Point(0, 1), Point(2, -1), Point(2, 1)],
+        shift: Point(0, 1),
+        style: Style::from_dotted_str("blue.bold"),
+    };
+    assert_eq!(expected, build_tetrimino(J));
+
+    let expected = Tetrimino {
+        diffs: vec![Point(-2, -1), Point(0, -1), Point(2, -1), Point(2, 1)],
+        shift: Point(0, 1),
+        style: Style::from_dotted_str("white.bold"),
+    };
+    assert_eq!(expected, build_tetrimino(L));
 }
 
 #[test]
 fn test_rotate() {
-    let piece_t = build_shape(T);
+    let piece_t = build_tetrimino(T);
 
     let expected = vec![Point(-1, -1), Point(-1, 0), Point(-1, 1), Point(0, 0)];
     assert_eq!(expected, rotate(&piece_t, 0));
@@ -90,7 +90,7 @@ fn test_try_position() {
         height: 5,
         width: 4,
     };
-    let piece_i = build_shape(I);
+    let piece_i = build_tetrimino(I);
 
     let expected = Some(vec![Point(1, 0), Point(1, 1), Point(1, 2), Point(1, 3)]);
     assert_eq!(expected, try_position(&field, &Point(1, 2), &piece_i, 0));

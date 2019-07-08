@@ -1,7 +1,7 @@
 
 use console::Style;
 use crate::utils::Trim;
-use crate::model::{Shape, Point};
+use crate::model::{Tetrimino, Point};
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -14,14 +14,14 @@ pub struct RawShape<'a> {
 }
 
 lazy_static! {
-    pub static ref SHAPES: [Shape; 7] = [
-        build_shape(I),
-        build_shape(O),
-        build_shape(L),
-        build_shape(J),
-        build_shape(T),
-        build_shape(S),
-        build_shape(Z),
+    pub static ref TETRIMINOES: [Tetrimino; 7] = [
+        build_tetrimino(I),
+        build_tetrimino(O),
+        build_tetrimino(T),
+        build_tetrimino(S),
+        build_tetrimino(Z),
+        build_tetrimino(J),
+        build_tetrimino(L),
     ];
 }
 
@@ -104,7 +104,7 @@ pub const L: RawShape<'static> = RawShape {
 };
 
 /// return the shape points relative of (0, 0) with parity
-pub fn build_shape(src: RawShape<'_>) -> Shape {
+pub fn build_tetrimino(src: RawShape<'_>) -> Tetrimino {
     let mut diffs: Vec<Point> = Vec::with_capacity(4);
     let mut ci = 0;
     // shift is needed to know how to round the shape after the rotation
@@ -127,5 +127,5 @@ pub fn build_shape(src: RawShape<'_>) -> Shape {
         ci += 1;
     }
     let style = Style::from_dotted_str(src.color);
-    Shape { diffs, shift: Point(shift_i, shift_j), style }
+    Tetrimino { diffs, shift: Point(shift_i, shift_j), style }
 }

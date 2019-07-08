@@ -1,14 +1,14 @@
 use console::Style;
 use rand_xoshiro::Xoroshiro128StarStar;
-use rand::{SeedableRng, Rng, RngCore};
+use rand::{SeedableRng, Rng};
 use std::fmt;
-use crate::shapes::{SHAPES, build_shape, I};
+use crate::tetrimino::TETRIMINOES;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Shape {
+pub struct Tetrimino {
     pub diffs: Vec<Point>,
     pub shift: Point,
     pub style: Style,
@@ -33,7 +33,7 @@ pub struct Shape {
 ///     for j in 0..field.width {
 ///         // ok to access field[i][j]
 ///         // field[i][j] == 0 corresponds to empty
-///         // field[i][j] == 1..7 corresponds to [I, O, L, J, T, S, Z], see SHAPES
+///         // field[i][j] == 1..7 corresponds to [I, O, L, J, T, S, Z], see TETRIMINOES
 ///         println!("{}", field.cells[i][j]);
 ///     }
 /// }
@@ -64,6 +64,7 @@ pub struct GameState {
     curr_cells: Vec<Point>,
     curr_shape_idx: usize,
     next_shape_idx: usize,
+    score: u32,
     rng: Xoroshiro128StarStar,
 }
 
@@ -79,19 +80,20 @@ impl GameState {
             height,
             width,
         };
-        let curr_shape_idx = rng.gen_range(0, SHAPES.len());
-        let next_shape_idx = rng.gen_range(0, SHAPES.len());
+        let curr_shape_idx = rng.gen_range(0, TETRIMINOES.len());
+        let next_shape_idx = rng.gen_range(0, TETRIMINOES.len());
         let base = Point(1, width as i32 / 2);
         let rotation = 0;
-        if let Some(curr_points) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
-            draw_shape(&mut field, &curr_points[..], curr_shape_idx);
+        if let Some(curr_cells) = try_position(&field, &base, &TETRIMINOES[curr_shape_idx], 0) {
+            draw_shape(&mut field, &curr_cells[..], curr_shape_idx);
             GameState {
                 field,
                 base,
                 rotation,
-                curr_cells: curr_points,
+                curr_cells,
                 curr_shape_idx,
                 next_shape_idx,
+                score: 0,
                 rng,
             }
         } else {
@@ -100,7 +102,7 @@ impl GameState {
     }
 
     pub fn try_current_position(&self, base: &Point, rotation: i32) -> Option<Vec<Point>>{
-        let shape = &SHAPES[self.curr_shape_idx];
+        let shape = &TETRIMINOES[self.curr_shape_idx];
         try_position(&self.field, &base, &shape, rotation)
     }
 
@@ -128,7 +130,7 @@ impl GameState {
                     self.draw_current_shape();
                     // TODO burn lines
                     self.curr_shape_idx = self.next_shape_idx;
-                    self.next_shape_idx = self.rng.gen_range(0, SHAPES.len());
+                    self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
                     self.rotation = 0;
                     self.base = Point(1, self.field.width as i32 / 2);
                     if let Some(cells) = self.try_current_position(&self.base, self.rotation) {
@@ -137,6 +139,7 @@ impl GameState {
                         }
                         self.draw_current_shape();
                     } else {
+                        // TODO end of game
                         panic!(self.prettify_game_state(false, false));
                     }
                 }
@@ -197,9 +200,9 @@ impl GameState {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
-        result.push_str(&format!("current shape: {}\n", &SHAPES[self.curr_shape_idx]
+        result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
-        result.push_str(&format!("next shape: {}\n", &SHAPES[self.next_shape_idx]
+        result.push_str(&format!("next shape: {}\n", &TETRIMINOES[self.next_shape_idx]
             .style.apply_to(self.next_shape_idx.to_string())));
         // now put all the stuff
         let empty_style = Style::new();
@@ -209,7 +212,7 @@ impl GameState {
             curr_piece.clear();
             let mut curr_style = &empty_style;
             let mut prev_symbol: Option<u8> = None;
-            let mut curr_symbol: Option<u8> = None;
+            let mut curr_symbol: Option<u8>;
             for j in 0..n {
                 // |000|1111|22222|33|
                 // ^   ^    ^     ^  ^
@@ -228,7 +231,7 @@ impl GameState {
                         result.push_str(&curr_style.apply_to(&curr_piece).to_string());
                         curr_piece.clear();
                     }
-                    curr_style = if cell == 0 { &empty_style } else { &SHAPES[cell as usize - 1].style };
+                    curr_style = if cell == 0 { &empty_style } else { &TETRIMINOES[cell as usize - 1].style };
                 }
 
                 curr_piece.push(if cell == 0 { '.' } else { '#' });
@@ -247,7 +250,7 @@ impl GameState {
     }
 }
 
-pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i32) -> Option<Vec<Point>> {
+pub fn try_position(field: &Field, base: &Point, shape: &Tetrimino, r: i32) -> Option<Vec<Point>> {
     let mut points = rotate(&shape, r);
     for d in &points {
         let i = base.0 + d.0;
@@ -268,7 +271,7 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i32) -> Optio
     Some(points)
 }
 
-pub fn rotate(shape: &Shape, r: i32) -> Vec<Point> {
+pub fn rotate(shape: &Tetrimino, r: i32) -> Vec<Point> {
     // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
     let r = (r % 4 + 4) % 4;
     let mut p = shape.clone();
@@ -307,7 +310,7 @@ pub fn draw_shape(field: &mut Field, points: &[Point], shape_idx: usize) {
 
 impl fmt::Display for GameState {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(&self.prettify_game_state(false, false));
+        f.write_str(&self.prettify_game_state(false, false))?;
         Ok(())
     }
 }

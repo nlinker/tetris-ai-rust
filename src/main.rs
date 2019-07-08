@@ -10,8 +10,8 @@ use std::time::Duration;
 use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng, RngCore};
 
-use tetris::model::{Shape, GameState, Action};
-use tetris::shapes::SHAPES;
+use tetris::model::{Tetrimino, GameState, Action};
+use tetris::tetrimino::TETRIMINOES;
 
 fn main() {
     let mut rng = Xoroshiro128StarStar::from_entropy();
