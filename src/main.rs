@@ -17,9 +17,16 @@ fn main() {
     let mut rng = Xoroshiro128StarStar::from_entropy();
 
     let mut gs = GameState::initial(15, 10, Some(68));
-    for _ in 0..100 {
+    for k in 0..100 {
         gs.step(Action::Tick);
+        match k % 4 {
+            0 => gs.step(Action::Left),
+            1 => gs.step(Action::Right),
+            2 => gs.step(Action::RotateCCW),
+            3 => gs.step(Action::RotateCW),
+            _ => unreachable!(),
+        }
         println!("{}", gs.prettify_game_state(true, true));
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(40));
     }
 }

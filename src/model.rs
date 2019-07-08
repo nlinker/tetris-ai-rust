@@ -58,6 +58,8 @@ pub enum Action {
     Tick,
 }
 
+/// TODO How do I make `rng` serializable?
+/// Essentially it is two u64 numbers, but they are private...
 #[derive(Debug, Clone)]
 pub struct GameState {
     field: Field,
@@ -86,7 +88,7 @@ impl GameState {
         let base = Point(1, width as i32 / 2);
         let rotation = 0;
         if let Some(curr_points) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
-            put_position(&mut field, &curr_points[..], curr_shape_idx);
+            draw_shape(&mut field, &curr_points[..], curr_shape_idx);
             GameState {
                 field,
                 base,
@@ -101,35 +103,96 @@ impl GameState {
         }
     }
 
+    pub fn try_current_position(&self, base: &Point, rotation: i32) -> Option<Vec<Point>>{
+        let shape = &SHAPES[self.curr_shape_idx];
+        try_position(&self.field, &base, &shape, rotation)
+    }
+
+    pub fn clear_current_position(&mut self) {
+        clear_position(&mut self.field, &self.curr_cells);
+    }
+
+    pub fn draw_current_shape(&mut self) {
+        draw_shape(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+    }
+
     pub fn step(&mut self, action: Action) {
         match action {
             Action::Tick => {
                 // clear current
-                clear_position(&mut self.field, &self.curr_cells);
                 let base_new = Point(self.base.0 + 1, self.base.1);
-                let shape = &SHAPES[self.curr_shape_idx];
-                if let Some(cells) = try_position(&self.field, &base_new, &shape, self.rotation) {
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
-                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+                    self.draw_current_shape();
                 } else {
-                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+                    self.draw_current_shape();
+                    // TODO burn lines
                     self.curr_shape_idx = self.next_shape_idx;
                     self.next_shape_idx = self.rng.gen_range(0, SHAPES.len());
+                    self.rotation = 0;
                     self.base = Point(1, self.field.width as i32 / 2);
-                    let shape = &SHAPES[self.curr_shape_idx];
-                    let cells = try_position(&self.field, &self.base, &shape, self.rotation).unwrap();
+                    if let Some(cells) = self.try_current_position(&self.base, self.rotation) {
+                        for i in 0..cells.len() {
+                            self.curr_cells[i] = cells[i];
+                        }
+                        self.draw_current_shape();
+                    } else {
+                        panic!(self.prettify_game_state(false, false));
+                    }
+                }
+            },
+            Action::Left => {
+                // clear current
+                let base_new = Point(self.base.0, self.base.1 - 1);
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                    self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
-                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
                 }
-
-                // try the same base.1 + 1
-                // draw current
+                self.draw_current_shape();
             },
+            Action::Right => {
+                // clear current
+                let base_new = Point(self.base.0, self.base.1 + 1);
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                    self.base = base_new;
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                }
+                self.draw_current_shape();
+            },
+            Action::RotateCCW => {
+                // clear current
+                let rotation_new = self.rotation + 1;
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
+                    self.rotation = rotation_new;
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                }
+                self.draw_current_shape();
+            }
+            Action::RotateCW => {
+                // clear current
+                let rotation_new = self.rotation - 1;
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
+                    self.rotation = rotation_new;
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                }
+                self.draw_current_shape();
+            }
             _ => unreachable!("implement this"),
         }
     }
@@ -242,7 +305,7 @@ pub fn clear_position(field: &mut Field, points: &[Point]) {
     }
 }
 
-pub fn put_position(field: &mut Field, points: &[Point], shape_idx: usize) {
+pub fn draw_shape(field: &mut Field, points: &[Point], shape_idx: usize) {
     for p in points {
         field.cells[p.0 as usize][p.1 as usize] = (shape_idx + 1) as u8;
     }
