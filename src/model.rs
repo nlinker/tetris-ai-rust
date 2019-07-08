@@ -51,6 +51,7 @@ pub enum Action {
     Down,
     RotateCW,  // clockwise
     RotateCCW, // counterclockwise
+    HardDrop,
     Tick,
 }
 
@@ -59,6 +60,7 @@ pub enum Action {
 #[derive(Debug, Clone)]
 pub struct GameState {
     field: Field,
+    game_over: bool,
     base: Point,
     rotation: i32,
     curr_cells: Vec<Point>,
@@ -88,6 +90,7 @@ impl GameState {
             draw_shape(&mut field, &curr_cells[..], curr_shape_idx);
             GameState {
                 field,
+                game_over: false,
                 base,
                 rotation,
                 curr_cells,
@@ -97,7 +100,17 @@ impl GameState {
                 rng,
             }
         } else {
-            panic!("Impossible initial state")
+            GameState {
+                field,
+                game_over: true,
+                base,
+                rotation,
+                curr_cells: vec![],
+                curr_shape_idx,
+                next_shape_idx,
+                score: 0,
+                rng,
+            }
         }
     }
 
