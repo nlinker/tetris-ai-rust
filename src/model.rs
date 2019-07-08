@@ -4,10 +4,6 @@ use rand::{SeedableRng, Rng, RngCore};
 use std::fmt;
 use crate::shapes::{SHAPES, build_shape, I};
 
-fn x() {
-    build_shape(I);
-}
-
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
 
@@ -208,14 +204,12 @@ impl GameState {
         // now put all the stuff
         let empty_style = Style::new();
         let mut curr_piece: String = String::with_capacity(n * 4);
-        let mut curr_style = &empty_style;
-        let mut prev_symbol: Option<u8> = None;
-        let mut curr_symbol: Option<u8> = None;
 
         for i in 0..m {
             curr_piece.clear();
-            curr_style = &empty_style;
-            prev_symbol = None;
+            let mut curr_style = &empty_style;
+            let mut prev_symbol: Option<u8> = None;
+            let mut curr_symbol: Option<u8> = None;
             for j in 0..n {
                 // |000|1111|22222|33|
                 // ^   ^    ^     ^  ^
@@ -237,7 +231,7 @@ impl GameState {
                     curr_style = if cell == 0 { &empty_style } else { &SHAPES[cell as usize - 1].style };
                 }
 
-                curr_piece.push(if cell == 0 { '.' } else { '*' });
+                curr_piece.push(if cell == 0 { '.' } else { '#' });
                 prev_symbol = curr_symbol;
             }
             // finish the current line

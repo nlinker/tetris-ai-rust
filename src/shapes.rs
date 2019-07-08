@@ -34,7 +34,7 @@ pub const I: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
-    color: "red",
+    color: "cyan.bold",
 };
 pub const O: RawShape<'static> = RawShape {
     field: r#"
@@ -45,29 +45,7 @@ pub const O: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.5,
-    color: "green",
-};
-pub const L: RawShape<'static> = RawShape {
-    field: r#"
-        . * . .
-        . * . .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.0,
-    rj: 1.5,
-    color: "yellow",
-};
-pub const J: RawShape<'static> = RawShape {
-    field: r#"
-        . . * .
-        . . * .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.0,
-    rj: 1.5,
-    color: "blue",
+    color: "yellow.bold",
 };
 pub const T: RawShape<'static> = RawShape {
     field: r#"
@@ -78,7 +56,7 @@ pub const T: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: "magenta",
+    color: "magenta.bold",
 };
 pub const S: RawShape<'static> = RawShape {
     field: r#"
@@ -89,7 +67,7 @@ pub const S: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: "cyan",
+    color: "green.bold",
 };
 pub const Z: RawShape<'static>  = RawShape {
     field: r#"
@@ -100,7 +78,29 @@ pub const Z: RawShape<'static>  = RawShape {
     "#,
     ri: 1.5,
     rj: 1.0,
-    color: "white",
+    color: "red.bold",
+};
+pub const J: RawShape<'static> = RawShape {
+    field: r#"
+        . . * .
+        . . * .
+        . * * .
+        . . . .
+    "#,
+    ri: 1.0,
+    rj: 1.5,
+    color: "blue.bold",
+};
+pub const L: RawShape<'static> = RawShape {
+    field: r#"
+        . * . .
+        . * . .
+        . * * .
+        . . . .
+    "#,
+    ri: 1.0,
+    rj: 1.5,
+    color: "white.bold",
 };
 
 /// return the shape points relative of (0, 0) with parity
