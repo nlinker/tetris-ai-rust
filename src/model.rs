@@ -118,7 +118,7 @@ impl GameState {
                     put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
                     self.curr_shape_idx = self.next_shape_idx;
                     self.next_shape_idx = self.rng.gen_range(0, SHAPES.len());
-                    self.base = Point(2, self.field.width as i32 / 2);
+                    self.base = Point(1, self.field.width as i32 / 2);
                     let shape = &SHAPES[self.curr_shape_idx];
                     let cells = try_position(&self.field, &self.base, &shape, self.rotation).unwrap();
                     for i in 0..cells.len() {
@@ -142,8 +142,8 @@ impl GameState {
         let empty_style = Style::new();
         let mut current_piece: String = String::with_capacity(n * 4);
         let mut current_style = &empty_style;
-        let mut prev_symbol: Option<char> = None;
-        let mut current_symbol: Option<char> = None;
+        let mut prev_symbol: Option<u8> = None;
+        let mut current_symbol: Option<u8> = None;
 
         result.push_str(&format!("current shape: {}\n", &SHAPES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
@@ -155,21 +155,23 @@ impl GameState {
                 if j != 0 {
                     current_piece.push(' ');
                 }
-
-                current_symbol = if self.field.cells[i][j] == 0 { Some('.') } else { Some('*') };
+                let cell = self.field.cells[i][j];
+                current_symbol = Some(cell);
                 if current_symbol != prev_symbol {
                     result.push_str(&current_style.apply_to(&current_piece).to_string());
                     current_piece.clear();
+                } else {
+                    current_piece.push(if cell == 0 { '.' } else { '*' });
+
                 }
-                match self.field.cells[i][j] {
+
+                match cell {
                     0 => current_style = &empty_style,
-                    k => current_style = &SHAPES[k as usize - 1].style
-                }
-                if let Some(c) = current_symbol {
-                    current_piece.push(c);
+                    k => current_style = &SHAPES[k as usize - 1].style,
                 }
                 prev_symbol = current_symbol;
             }
+            // finish the current line
             current_piece.push('\n');
             result.push_str(&current_style.apply_to(&current_piece).to_string());
             current_piece.clear();
