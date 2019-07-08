@@ -1,21 +1,14 @@
-use crate::utils::Trim;
-use lazy_static;
 use console::Style;
 use rand_xoshiro::Xoroshiro128StarStar;
-use rand::{SeedableRng, Rng};
+use rand::{SeedableRng, Rng, RngCore};
 use std::fmt;
+use crate::shapes::{SHAPES, build_shape, I};
 
-/// `field` is 4x4 field with
-/// `ri` and `rj` define rotation point
-/// `color` must correspond to
-pub struct RawShape<'a> {
-    field: &'a str,
-    ri: f32,
-    rj: f32,
-    color: &'a str,
+fn x() {
+    build_shape(I);
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -65,7 +58,7 @@ pub enum Action {
     Tick,
 }
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct GameState {
     field: Field,
     base: Point,
@@ -73,101 +66,12 @@ pub struct GameState {
     curr_cells: Vec<Point>,
     curr_shape_idx: usize,
     next_shape_idx: usize,
+    rng: Xoroshiro128StarStar,
 }
-
-lazy_static! {
-    pub static ref SHAPES: [Shape; 7] = [
-        build_shape(I),
-        build_shape(O),
-        build_shape(L),
-        build_shape(J),
-        build_shape(T),
-        build_shape(S),
-        build_shape(Z),
-    ];
-}
-
-pub const I: RawShape<'static> = RawShape {
-    field: r#"
-        . . . .
-        * * * *
-        . . . .
-        . . . .
-    "#,
-    ri: 1.0,
-    rj: 1.5,
-    color: "red",
-};
-pub const O: RawShape<'static> = RawShape {
-    field: r#"
-        . . . .
-        . * * .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.5,
-    rj: 1.5,
-    color: "green",
-};
-pub const L: RawShape<'static> = RawShape {
-    field: r#"
-        . * . .
-        . * . .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.0,
-    rj: 1.5,
-    color: "yellow",
-};
-pub const J: RawShape<'static> = RawShape {
-    field: r#"
-        . . * .
-        . . * .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.0,
-    rj: 1.5,
-    color: "blue",
-};
-pub const T: RawShape<'static> = RawShape {
-    field: r#"
-        . . . .
-        * * * .
-        . * . .
-        . . . .
-    "#,
-    ri: 1.5,
-    rj: 1.0,
-    color: "magenta",
-};
-pub const S: RawShape<'static> = RawShape {
-    field: r#"
-        . . . .
-        . * * .
-        * * . .
-        . . . .
-    "#,
-    ri: 1.5,
-    rj: 1.0,
-    color: "cyan",
-};
-pub const Z: RawShape<'static>  = RawShape {
-    field: r#"
-        . . . .
-        * * . .
-        . * * .
-        . . . .
-    "#,
-    ri: 1.5,
-    rj: 1.0,
-    color: "white",
-};
 
 impl GameState {
     pub fn initial(height: usize, width: usize, seed: Option<u64>) -> GameState {
-        let mut random = if let Some(seed) = seed {
+        let mut rng = if let Some(seed) = seed {
             Xoroshiro128StarStar::seed_from_u64(seed)
         } else {
             Xoroshiro128StarStar::from_entropy()
@@ -177,12 +81,12 @@ impl GameState {
             height,
             width,
         };
-        let curr_shape_idx = random.gen_range(0, SHAPES.len());
-        let next_shape_idx = random.gen_range(0, SHAPES.len());
+        let curr_shape_idx = rng.gen_range(0, SHAPES.len());
+        let next_shape_idx = rng.gen_range(0, SHAPES.len());
         let base = Point(1, width as i32 / 2);
         let rotation = 0;
         if let Some(curr_points) = try_position(&field, &base, &SHAPES[curr_shape_idx], 0) {
-            put_position(&mut field, curr_shape_idx, &curr_points[..]);
+            put_position(&mut field, &curr_points[..], curr_shape_idx);
             GameState {
                 field,
                 base,
@@ -190,17 +94,39 @@ impl GameState {
                 curr_cells: curr_points,
                 curr_shape_idx,
                 next_shape_idx,
+                rng,
             }
         } else {
             panic!("Impossible initial state")
         }
     }
 
-
     pub fn step(&mut self, action: Action) {
         match action {
-            Tick => {
+            Action::Tick => {
                 // clear current
+                clear_position(&mut self.field, &self.curr_cells);
+                let base_new = Point(self.base.0 + 1, self.base.1);
+                let shape = &SHAPES[self.curr_shape_idx];
+                if let Some(cells) = try_position(&self.field, &base_new, &shape, self.rotation) {
+                    self.base = base_new;
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+                } else {
+                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+                    self.curr_shape_idx = self.next_shape_idx;
+                    self.next_shape_idx = self.rng.gen_range(0, SHAPES.len());
+                    self.base = Point(2, self.field.width as i32 / 2);
+                    let shape = &SHAPES[self.curr_shape_idx];
+                    let cells = try_position(&self.field, &self.base, &shape, self.rotation).unwrap();
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                    put_position(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+                }
+
                 // try the same base.1 + 1
                 // draw current
             },
@@ -249,7 +175,7 @@ impl GameState {
             current_piece.clear();
         }
         if rewind {
-            for k in 0..(m + 2) {
+            for _ in 0..(m + 3) {
                 result.push_str("\x1B[A") // up
             }
         }
@@ -257,34 +183,7 @@ impl GameState {
     }
 }
 
-/// return the shape points relative of (0, 0) with parity
-pub fn build_shape(src: RawShape<'_>) -> Shape {
-    let mut diffs: Vec<Point> = Vec::with_capacity(4);
-    let mut ci = 0;
-    // shift is needed to know how to round the shape after the rotation
-    let mut shift_i = 0;
-    let mut shift_j = 0;
-    for line in src.field.trim_indent().split('\n') {
-        let mut cj = 0;
-        for c in line.chars() {
-            if c == '*' {
-                let i = (2.0 * ((ci as f32) - src.ri)).trunc() as i32;
-                let j = (2.0 * ((cj as f32) - src.rj)).trunc() as i32;
-                diffs.push(Point(i, j));
-                if i % 2 == 1 { shift_i = 1; }
-                if j % 2 == 1 { shift_j = 1; }
-                cj += 1;
-            } else if c == '.' {
-                cj += 1;
-            }
-        }
-        ci += 1;
-    }
-    let style = Style::from_dotted_str(src.color);
-    Shape { diffs, shift: Point(shift_i, shift_j), style }
-}
-
-pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option<Vec<Point>> {
+pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i32) -> Option<Vec<Point>> {
     let mut points = rotate(&shape, r);
     for d in &points {
         let i = base.0 + d.0;
@@ -305,7 +204,7 @@ pub fn try_position(field: &Field, base: &Point, shape: &Shape, r: i8) -> Option
     Some(points)
 }
 
-pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
+pub fn rotate(shape: &Shape, r: i32) -> Vec<Point> {
     // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
     let r = (r % 4 + 4) % 4;
     let mut p = shape.clone();
@@ -330,7 +229,13 @@ pub fn rotate(shape: &Shape, r: i8) -> Vec<Point> {
     p.diffs
 }
 
-pub fn put_position(field: &mut Field, shape_idx: usize, points: &[Point]) {
+pub fn clear_position(field: &mut Field, points: &[Point]) {
+    for p in points {
+        field.cells[p.0 as usize][p.1 as usize] = 0;
+    }
+}
+
+pub fn put_position(field: &mut Field, points: &[Point], shape_idx: usize) {
     for p in points {
         field.cells[p.0 as usize][p.1 as usize] = (shape_idx + 1) as u8;
     }

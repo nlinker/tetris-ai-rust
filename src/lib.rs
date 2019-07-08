@@ -2,8 +2,7 @@
 
 pub mod model;
 pub mod utils;
-
-extern crate rand;
+pub mod shapes;
 
 #[macro_use]
 extern crate lazy_static;

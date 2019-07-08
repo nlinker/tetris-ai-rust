@@ -1,7 +1,8 @@
 #![feature(type_ascription)]
 
 //use std::collections::HashSet;
-use tetris::model::{Point, build_shape, I, O, L, J, T, S, Z, Shape, Field, try_position, rotate, GameState};
+use tetris::model::{Point, Shape, Field, try_position, rotate, GameState};
+use tetris::shapes::{build_shape, I, O, L, J, T, S, Z};
 use console::Style;
 
 #[test]
