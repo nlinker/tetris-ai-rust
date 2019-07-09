@@ -8,6 +8,9 @@ RL stands for Reinforcement Learning.
 
 ```bash
 cargo install cargo-tree
+ 
+ # for ncurses dependency
+sudo apt install libncurses5-dev
 ```
 
 https://tetris.fandom.com/wiki/Tetris_Guideline

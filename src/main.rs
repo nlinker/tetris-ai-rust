@@ -12,24 +12,25 @@ use rand::{SeedableRng, Rng, RngCore};
 
 use tetris::model::{Tetrimino, GameState, Action};
 use tetris::tetrimino::TETRIMINOES;
-use termios::{Termios, tcsetattr};
-use termios::os::linux::{ICANON, ECHO, TCSANOW};
 use std::io::{Write, Read};
+use ncurses::*; // watch for globs
 
 fn main() {
-    let stdin = 0; //libc::STDIN_FILENO;
-    let termios = Termios::from_fd(stdin).unwrap();
-    let mut new_termios = termios.clone();
-    new_termios.c_lflag &= !(ICANON | ECHO);
-    tcsetattr(stdin, TCSANOW, &mut new_termios).unwrap();
-    let stdout = io::stdout();
-    let mut reader = io::stdin();
-    let mut buffer = [0;3];  // read exactly 3 bytes
-    print!("Hit a key! ");
-    stdout.lock().flush().unwrap();
-    reader.read_exact(&mut buffer).unwrap();
-    println!("You have hit: {:?}", buffer);
-    tcsetattr(stdin, TCSANOW, & termios).unwrap();
+    let window = initscr();
+    nodelay(window, true);
+    loop {
+        // get keyboard input, returns -1 if none available
+        let c = wgetch(window);
+        if c != -1 {
+            // print numeric value
+            waddstr(window, (c.to_string() + " ").as_str());
+            wrefresh(window);
+            // return curser to start position
+            wmove(window, 0, 0);
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+
 //
 //
 //    let mut rng = Xoroshiro128StarStar::from_entropy();
