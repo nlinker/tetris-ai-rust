@@ -7,26 +7,41 @@ extern crate lazy_static;
 //const TEST: (String, Point) = ("xxx".into(), Point(0, 0));
 use std::{thread, io};
 use std::time::Duration;
+use std::io::{Write, Read};
 use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng, RngCore};
 
 use tetris::model::{Tetrimino, GameState, Action};
 use tetris::tetrimino::TETRIMINOES;
-use std::io::{Write, Read};
+
 use ncurses::*; // watch for globs
+use termios::*;
 
 fn main() {
+    let mut gs = GameState::initial(20, 16, Some(68));
+
     let window = initscr();
     nodelay(window, true);
+    start_color();
     loop {
         // get keyboard input, returns -1 if none available
         let c = wgetch(window);
         if c != -1 {
             // print numeric value
-            waddstr(window, (c.to_string() + " ").as_str());
-            wrefresh(window);
-            // return curser to start position
+            init_pair(1, COLOR_BLACK, COLOR_RED);
+            init_pair(2, COLOR_BLACK, COLOR_GREEN);
+
             wmove(window, 0, 0);
+            attron(COLOR_PAIR(1));
+            waddstr(window, "ERROR: I like tacos, but I don't have any.\n");
+
+            attron(COLOR_PAIR(2));
+            waddstr(window, "SUCCESS: I found some tacos.\n");
+            refresh();
+
+            // waddstr(window, gs.prettify_game_state(true, true).as_str());
+            // wrefresh(window);
+            // return curser to start position
         }
         thread::sleep(Duration::from_millis(10));
     }
