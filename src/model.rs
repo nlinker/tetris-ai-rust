@@ -45,6 +45,7 @@ pub struct Field {
     pub width: usize,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum Action {
     Left,
     Right,
@@ -159,6 +160,18 @@ impl GameState {
                     }
                 }
             },
+            Action::Down => {
+                // clear current
+                let base_new = Point(self.base.0 + 1, self.base.1);
+                self.clear_current_position();
+                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                    self.base = base_new;
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                }
+                self.draw_current_shape();
+            },
             Action::Left => {
                 // clear current
                 let base_new = Point(self.base.0, self.base.1 - 1);
@@ -216,6 +229,8 @@ impl GameState {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
+        result.push_str(&String::from_utf8(vec![b' '; 2 * n]).unwrap());
+        result.push('\n');
         result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
         result.push_str(&format!("next shape: {}\n", &TETRIMINOES[self.next_shape_idx]
@@ -258,7 +273,7 @@ impl GameState {
             result.push('\n');
         }
         if rewind {
-            for _ in 0..(m + 3) {
+            for _ in 0..(m + 4) {
                 result.push_str("\x1B[A") // up
             }
         }
