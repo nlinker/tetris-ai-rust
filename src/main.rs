@@ -14,9 +14,21 @@ use device_query::{DeviceQuery, DeviceState, MouseState, Keycode};
 
 use tetris::model::{Tetrimino, GameState, Action};
 use tetris::tetrimino::TETRIMINOES;
+use termios::{Termios, tcsetattr};
+use termios::os::linux::{ICANON, ECHO, TCSANOW};
 
 fn main() {
-    let mut gs = GameState::initial(20, 16, Some(68));
+    let mut gs = GameState::initial(15, 10, Some(69));
+
+    // How can I read one character from stdin without having to hit enter?
+    // https://stackoverflow.com/a/37416107/5066426
+    let stdin = 0;
+    let termios = Termios::from_fd(stdin).unwrap();
+    let mut new_termios = termios.clone();
+    new_termios.c_lflag &= !(ICANON | ECHO); // no echo and canonical mode
+    tcsetattr(stdin, TCSANOW, &mut new_termios).unwrap();
+    let mut buffer = [0;1];
+    let mut reader = io::stdin();
 
     let device_state = DeviceState::new();
     let mut k = 0;
@@ -52,7 +64,12 @@ fn main() {
             // reset the state, when key is released
             key_press = None;
         }
+
         if k >= 10 {
+            // consume stdin, read until its finished,
+            // this is done to avoid echoing all key presses after the game loop finished
+            // TODO consume stdin
+            // if let Ok(_) = reader.read_exact(&mut buffer) { .. }
             if gs.step(Action::Tick) { break; }
             println!("{}", gs.prettify_game_state(true, true));
             k = 0;
@@ -62,32 +79,5 @@ fn main() {
         thread::sleep(Duration::from_millis(60));
     }
     println!("{}", gs.prettify_game_state(false, true));
-
-//    let mut rng = Xoroshiro128StarStar::from_entropy();
-//
-//    let mut gs = GameState::initial(20, 16, Some(68));
-//    for k in 0..1000 {
-//        if gs.step(Action::Tick) { break; }
-//        match k % 2 {
-//            0 => {
-//                for _ in 0..rng.gen_range(1, 8) {
-//                    gs.step(Action::Left);
-//                    println!("{}", gs.prettify_game_state(true, true));
-//                }
-//            },
-//            1 => {
-//                for _ in 0..rng.gen_range(1, 8) {
-//                    gs.step(Action::Right);
-//                    println!("{}", gs.prettify_game_state(true, true));
-//                }
-//            },
-//            _ => unreachable!(),
-//        }
-//        if k % 10 == 0 {
-//            gs.step(Action::RotateCCW);
-//        }
-//        println!("{}", gs.prettify_game_state(true, true));
-//        thread::sleep(Duration::from_millis(40));
-//    }
-//    println!("{}", gs.prettify_game_state(false, true));
+    tcsetattr(stdin, TCSANOW, & termios).unwrap();  // reset the stdin to
 }

@@ -128,6 +128,29 @@ impl GameState {
         draw_shape(&mut self.field, &self.curr_cells, self.curr_shape_idx);
     }
 
+    pub fn burn_lines(&mut self) {
+        let mut burn_is: Vec<usize> = vec![];
+        for i in 0..self.field.height {
+            if self.field.cells[i].iter().all(|c| *c != 0) {
+                burn_is.push(i);
+            }
+        }
+        // burning makes the cells fall down, therefore we iterate down up
+        // `it` skips the rows without burning
+        let mut it = self.field.height - 1;
+        for i in (0..self.field.height).rev() {
+            if it != i {
+                for j in 0..self.field.width {
+                    self.field.cells[it][j] = self.field.cells[i][j];
+                }
+            }
+            if !burn_is.contains(&i) && it > 0 {
+                it -= 1;
+            }
+        }
+        self.score += burn_is.len() as u32;
+    }
+
     pub fn step(&mut self, action: Action) -> bool {
         if self.game_over {
             return true;
@@ -145,7 +168,7 @@ impl GameState {
                     self.draw_current_shape();
                 } else {
                     self.draw_current_shape();
-                    // TODO burn lines
+                    self.burn_lines();
                     self.curr_shape_idx = self.next_shape_idx;
                     self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
                     self.rotation = 0;
@@ -229,12 +252,14 @@ impl GameState {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
-        result.push_str(&String::from_utf8(vec![b' '; 2 * n]).unwrap());
+        // the line to echo characters, not needed with termios and !ECHO flag
+        // result.push_str(&String::from_utf8(vec![b' '; 2 * n]).unwrap());
         result.push('\n');
-        result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
-            .style.apply_to(self.curr_shape_idx.to_string())));
+        result.push_str(&format!("score: {}\n", self.score));
         result.push_str(&format!("next shape: {}\n", &TETRIMINOES[self.next_shape_idx]
             .style.apply_to(self.next_shape_idx.to_string())));
+        result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
+            .style.apply_to(self.curr_shape_idx.to_string())));
         // now put all the stuff
         let empty_style = Style::new();
         let mut curr_piece: String = String::with_capacity(n * 4);
@@ -278,7 +303,7 @@ impl GameState {
             result.push('\n');
         }
         if rewind {
-            for _ in 0..(m + 4) {
+            for _ in 0..(m + 5) {
                 result.push_str("\x1B[A") // up
             }
         }
