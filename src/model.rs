@@ -253,7 +253,12 @@ impl GameState {
                     // intersperse the line with spaces
                     curr_piece.push(' ');
                 }
-                let cell = self.field.cells[i][j];
+                let ij = Point(i as i32, j as i32);
+                let cell = if self.curr_cells.iter().all(|c| *c != ij) {
+                    self.field.cells[i][j]
+                } else {
+                    self.curr_shape_idx as u8 + 1
+                };
                 curr_symbol = Some(cell);
 
                 if curr_symbol != prev_symbol {

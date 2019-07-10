@@ -20,21 +20,37 @@ fn main() {
 
     let device_state = DeviceState::new();
     let mut k = 0;
+    let mut key_press: Option<Keycode> = None;
     loop {
         let keys: Vec<Keycode> = device_state.query_keymap();
         if !keys.is_empty() {
-            // detect key press
-            let k = &keys[0];
-            let x = match k {
+            let x = match keys[0] {
                 Keycode::A => { gs.step(Action::Left); true }
                 Keycode::D => { gs.step(Action::Right); true }
-                Keycode::W => { gs.step(Action::RotateCW); true }
                 Keycode::S => { gs.step(Action::Down); true }
                 _ => false,
             };
             if x {
                 println!("{}", gs.prettify_game_state(true, true));
             }
+            if key_press.is_none() {
+                // special case for rotation to disable echoing
+                key_press = Some(keys[0].clone());
+                match keys[0] {
+                    Keycode::W => {
+                        gs.step(Action::RotateCW);
+                        println!("{}", gs.prettify_game_state(true, true));
+                    },
+                    Keycode::Q => {
+                        gs.step(Action::RotateCCW);
+                        println!("{}", gs.prettify_game_state(true, true));
+                    },
+                    _ => {}
+                }
+            }
+        } else {
+            // reset the state, when key is released
+            key_press = None;
         }
         if k >= 10 {
             if gs.step(Action::Tick) { break; }
@@ -43,7 +59,7 @@ fn main() {
         } else {
             k += 1;
         }
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(60));
     }
     println!("{}", gs.prettify_game_state(false, true));
 
