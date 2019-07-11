@@ -1,9 +1,8 @@
 #![feature(type_ascription)]
 
-//use std::collections::HashSet;
+use console::Style;
 use tetris::model::{Point, Tetrimino, Field, try_position, rotate, GameState};
 use tetris::tetrimino::{build_tetrimino, I, O, L, J, T, S, Z};
-use console::Style;
 
 #[test]
 fn test_conversion() {
@@ -110,11 +109,31 @@ fn test_try_position() {
 }
 
 #[test]
-fn test_move() {
-    let gs = GameState::initial(20, 10, Some(66));
-    // curr_shape_idx = 3
-    println!("{}", gs);
-    assert_eq!(1, 1);
+fn test_burn() {
+    let field = Field {
+        cells: vec![
+            vec![3, 0, 0, 0],
+            vec![2, 0, 0, 0],
+            vec![2, 3, 4, 4],
+            vec![2, 3, 0, 4],
+            vec![1, 1, 3, 4],
+            vec![0, 1, 1, 1],
+        ],
+        height: 6,
+        width: 4,
+    };
+    let mut gs = GameState::initial(6, 4, Some(33));
+    gs.field = field;
+    gs.burn_lines();
+    let expected: Vec<Vec<u8>> = vec![
+        vec![0, 0, 0, 0],
+        vec![0, 0, 0, 0],
+        vec![3, 0, 0, 0],
+        vec![2, 0, 0, 0],
+        vec![2, 3, 0, 4],
+        vec![0, 1, 1, 1],
+    ];
+    assert_eq!(expected, gs.field.cells);
 }
 
 

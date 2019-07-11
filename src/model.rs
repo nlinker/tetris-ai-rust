@@ -60,15 +60,15 @@ pub enum Action {
 /// Essentially it is two u64 numbers, but they are private...
 #[derive(Debug, Clone)]
 pub struct GameState {
-    field: Field,
-    game_over: bool,
-    base: Point,
-    rotation: i32,
-    curr_cells: Vec<Point>,
-    curr_shape_idx: usize,
-    next_shape_idx: usize,
-    score: u32,
-    rng: Xoroshiro128StarStar,
+    pub field: Field,
+    pub game_over: bool,
+    pub base: Point,
+    pub rotation: i32,
+    pub curr_cells: Vec<Point>,
+    pub curr_shape_idx: usize,
+    pub next_shape_idx: usize,
+    pub score: u32,
+    pub rng: Xoroshiro128StarStar,
 }
 
 impl GameState {
@@ -114,22 +114,19 @@ impl GameState {
         }
     }
 
-    pub fn try_current_position(&self, base: &Point, rotation: i32) -> Option<Vec<Point>> {
+    pub fn try_current_shape(&self, base: &Point, rotation: i32) -> Option<Vec<Point>> {
         let shape = &TETRIMINOES[self.curr_shape_idx];
         try_position(&self.field, &base, &shape, rotation)
     }
 
-    pub fn clear_current_shape(&mut self) {
-        clear_position(&mut self.field, &self.curr_cells);
-    }
-
     pub fn draw_current_shape(&mut self) {
-        draw_shape(&mut self.field, &self.curr_cells, self.curr_shape_idx);
+        for p in &self.curr_cells {
+            self.field.cells[p.0 as usize][p.1 as usize] = (self.curr_shape_idx + 1) as u8;
+        }
     }
 
     pub fn burn_lines(&mut self) {
         let mut burn_is: Vec<usize> = vec![];
-        self.draw_current_shape();
         for i in 0..self.field.height {
             if self.field.cells[i].iter().all(|c| *c != 0) {
                 burn_is.push(i);
@@ -148,19 +145,30 @@ impl GameState {
                 it -= 1;
             }
         }
+        // the rest of lines are populated by zeros
+        for i in (0..it + 1).rev() {
+            for j in 0..self.field.width {
+                self.field.cells[i][j] = 0;
+            }
+        }
         self.score += burn_is.len() as u32;
     }
 
-    fn spawn_next_shape(&mut self) -> () {
+    pub fn spawn_next_shape(&mut self) -> () {
+        let prev_shape_idx = self.curr_shape_idx;
         self.curr_shape_idx = self.next_shape_idx;
         self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
         self.base = Point(1, self.field.width as i32 / 2);
-        if let Some(cells) = self.try_current_position(&self.base, self.rotation) {
+        if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
             for i in 0..cells.len() {
                 self.curr_cells[i] = cells[i];
             }
         } else {
+            // restore index to avoid incorrect color change of the last tetrimino,
+            // that caused the game over
+            self.next_shape_idx = self.curr_shape_idx;
+            self.curr_shape_idx = prev_shape_idx;
             self.game_over = true;
         }
     }
@@ -173,12 +181,13 @@ impl GameState {
             Action::Tick => {
                 // clear current
                 let base_new = Point(self.base.0 + 1, self.base.1);
-                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                if let Some(cells) = self.try_current_shape(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 } else {
+                    self.draw_current_shape();
                     self.burn_lines();
                     self.spawn_next_shape();
                 }
@@ -189,7 +198,7 @@ impl GameState {
                 let mut cur_cells: Option<Vec<Point>> = None;
                 loop {
                     let base_new = Point(i, self.base.1);
-                    let cells = self.try_current_position(&base_new, self.rotation);
+                    let cells = self.try_current_shape(&base_new, self.rotation);
                     if cells.is_none() {
                         break;
                     }
@@ -201,6 +210,7 @@ impl GameState {
                         self.curr_cells[i] = cells[i];
                     }
                     self.base = Point(i, self.base.1);
+                    self.draw_current_shape();
                     self.burn_lines();
                     self.spawn_next_shape();
                 }
@@ -208,7 +218,7 @@ impl GameState {
             Action::Down => {
                 // clear current
                 let base_new = Point(self.base.0 + 1, self.base.1);
-                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                if let Some(cells) = self.try_current_shape(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -218,7 +228,7 @@ impl GameState {
             Action::Left => {
                 // clear current
                 let base_new = Point(self.base.0, self.base.1 - 1);
-                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                if let Some(cells) = self.try_current_shape(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -228,7 +238,7 @@ impl GameState {
             Action::Right => {
                 // clear current
                 let base_new = Point(self.base.0, self.base.1 + 1);
-                if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
+                if let Some(cells) = self.try_current_shape(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -238,7 +248,7 @@ impl GameState {
             Action::RotateCCW => {
                 // clear current
                 let rotation_new = self.rotation + 1;
-                if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
+                if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -248,7 +258,7 @@ impl GameState {
             Action::RotateCW => {
                 // clear current
                 let rotation_new = self.rotation - 1;
-                if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
+                if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -372,18 +382,6 @@ pub fn rotate(shape: &Tetrimino, r: i32) -> Vec<Point> {
         d.1 = (d.1 - p.shift.1) / 2;
     }
     p.diffs
-}
-
-pub fn clear_position(field: &mut Field, points: &[Point]) {
-    for p in points {
-        field.cells[p.0 as usize][p.1 as usize] = 0;
-    }
-}
-
-pub fn draw_shape(field: &mut Field, points: &[Point], shape_idx: usize) {
-    for p in points {
-        field.cells[p.0 as usize][p.1 as usize] = (shape_idx + 1) as u8;
-    }
 }
 
 impl fmt::Display for GameState {
