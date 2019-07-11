@@ -51,5 +51,5 @@ fn main() {
 
     write!(stdout, "{}", gs.prettify_game_state(false, true)).unwrap();
     write!(stdout, "{}", termion::cursor::Show).unwrap();
-    stdout.flush();
+    stdout.flush().unwrap();
 }
