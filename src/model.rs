@@ -88,7 +88,6 @@ impl GameState {
         let base = Point(1, width as i32 / 2);
         let rotation = 0;
         if let Some(curr_cells) = try_position(&field, &base, &TETRIMINOES[curr_shape_idx], 0) {
-            draw_shape(&mut field, &curr_cells[..], curr_shape_idx);
             GameState {
                 field,
                 game_over: false,
@@ -120,7 +119,7 @@ impl GameState {
         try_position(&self.field, &base, &shape, rotation)
     }
 
-    pub fn clear_current_position(&mut self) {
+    pub fn clear_current_shape(&mut self) {
         clear_position(&mut self.field, &self.curr_cells);
     }
 
@@ -130,6 +129,7 @@ impl GameState {
 
     pub fn burn_lines(&mut self) {
         let mut burn_is: Vec<usize> = vec![];
+        self.draw_current_shape();
         for i in 0..self.field.height {
             if self.field.cells[i].iter().all(|c| *c != 0) {
                 burn_is.push(i);
@@ -151,6 +151,20 @@ impl GameState {
         self.score += burn_is.len() as u32;
     }
 
+    fn spawn_next_shape(&mut self) -> () {
+        self.curr_shape_idx = self.next_shape_idx;
+        self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
+        self.rotation = 0;
+        self.base = Point(1, self.field.width as i32 / 2);
+        if let Some(cells) = self.try_current_position(&self.base, self.rotation) {
+            for i in 0..cells.len() {
+                self.curr_cells[i] = cells[i];
+            }
+        } else {
+            self.game_over = true;
+        }
+    }
+
     pub fn step(&mut self, action: Action) -> bool {
         if self.game_over {
             return true;
@@ -159,91 +173,88 @@ impl GameState {
             Action::Tick => {
                 // clear current
                 let base_new = Point(self.base.0 + 1, self.base.1);
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
-                    self.draw_current_shape();
                 } else {
-                    self.draw_current_shape();
                     self.burn_lines();
-                    self.curr_shape_idx = self.next_shape_idx;
-                    self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
-                    self.rotation = 0;
-                    self.base = Point(1, self.field.width as i32 / 2);
-                    if let Some(cells) = self.try_current_position(&self.base, self.rotation) {
-                        for i in 0..cells.len() {
-                            self.curr_cells[i] = cells[i];
-                        }
-                        self.draw_current_shape();
-                    } else {
-                        self.game_over = true;
-                    }
+                    self.spawn_next_shape();
                 }
-            },
+            }
+            Action::HardDrop => {
+                let mut i = self.base.0;
+                // the last valid position on the path
+                let mut cur_cells: Option<Vec<Point>> = None;
+                loop {
+                    let base_new = Point(i, self.base.1);
+                    let cells = self.try_current_position(&base_new, self.rotation);
+                    if cells.is_none() {
+                        break;
+                    }
+                    cur_cells = cells;
+                    i += 1;
+                }
+                if let Some(cells) = cur_cells {
+                    for i in 0..cells.len() {
+                        self.curr_cells[i] = cells[i];
+                    }
+                    self.base = Point(i, self.base.1);
+                    self.burn_lines();
+                    self.spawn_next_shape();
+                }
+            }
             Action::Down => {
                 // clear current
                 let base_new = Point(self.base.0 + 1, self.base.1);
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 }
-                self.draw_current_shape();
-            },
+            }
             Action::Left => {
                 // clear current
                 let base_new = Point(self.base.0, self.base.1 - 1);
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 }
-                self.draw_current_shape();
-            },
+            }
             Action::Right => {
                 // clear current
                 let base_new = Point(self.base.0, self.base.1 + 1);
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&base_new, self.rotation) {
                     self.base = base_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 }
-                self.draw_current_shape();
-            },
+            }
             Action::RotateCCW => {
                 // clear current
                 let rotation_new = self.rotation + 1;
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 }
-                self.draw_current_shape();
             }
             Action::RotateCW => {
                 // clear current
                 let rotation_new = self.rotation - 1;
-                self.clear_current_position();
                 if let Some(cells) = self.try_current_position(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
                 }
-                self.draw_current_shape();
             }
-            _ => unreachable!("implement this"),
         }
         return false;
     }
