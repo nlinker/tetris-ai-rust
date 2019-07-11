@@ -259,10 +259,19 @@ impl GameState {
         return false;
     }
 
+    /// The result is similar to (without comment sign)
+    /// ```
+    /// // . . . .
+    /// // . . .#.
+    /// // . .#.#.
+    /// // .#.#.#.
+    /// ```
     pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool) -> String {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
+        result.push_str(&String::from_utf8(vec![b' '; 2 * n]).unwrap());
+        // in the raw mode we need to to rewind cursor, therefore we prepend \r
         result.push_str("\r\n");
         result.push_str(&format!("score: {}\r\n", self.score));
         result.push_str(&format!("next shape: {}\r\n", &TETRIMINOES[self.next_shape_idx]
@@ -270,22 +279,11 @@ impl GameState {
         result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
         // now put all the stuff
-        let empty_style = Style::new();
-        let mut curr_piece: String = String::with_capacity(n * 4);
-
         for i in 0..m {
-            curr_piece.clear();
-            let mut curr_style = &empty_style;
-            let mut prev_symbol: Option<u8> = None;
-            let mut curr_symbol: Option<u8>;
             for j in 0..n {
-                // |000|1111|22222|33|
-                // ^   ^    ^     ^  ^
-                // each line subdivides by groups, and on each boundary we
-                // output the previous group and calculate the style
-                if j != 0 {
+                if j == 0 {
                     // intersperse the line with spaces
-                    curr_piece.push(' ');
+                    result.push('.');
                 }
                 let ij = Point(i as i32, j as i32);
                 let cell = if self.curr_cells.iter().all(|c| *c != ij) {
@@ -293,22 +291,16 @@ impl GameState {
                 } else {
                     self.curr_shape_idx as u8 + 1
                 };
-                curr_symbol = Some(cell);
-
-                if curr_symbol != prev_symbol {
-                    // a boundary found
-                    if prev_symbol.is_some() {
-                        result.push_str(&curr_style.apply_to(&curr_piece).to_string());
-                        curr_piece.clear();
-                    }
-                    curr_style = if cell == 0 { &empty_style } else { &TETRIMINOES[cell as usize - 1].style };
-                }
-
-                curr_piece.push(if cell == 0 { '.' } else { '#' });
-                prev_symbol = curr_symbol;
+                let piece = if cell == 0 {
+                    result.push(' ');
+                    result.push('.');
+                } else {
+                    let style: &Style = &TETRIMINOES[cell as usize - 1].style;
+                    result.push_str(&style.apply_to('#').to_string());
+                    result.push('.');
+                };
             }
             // finish the current line
-            result.push_str(&curr_style.apply_to(&curr_piece).to_string());
             result.push_str("\r\n");
         }
         if rewind {
