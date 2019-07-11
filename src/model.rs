@@ -252,11 +252,9 @@ impl GameState {
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (2 * n + 1) + 2);
-        // the line to echo characters, not needed with termios and !ECHO flag
-        // result.push_str(&String::from_utf8(vec![b' '; 2 * n]).unwrap());
-        result.push('\n');
-        result.push_str(&format!("score: {}\n", self.score));
-        result.push_str(&format!("next shape: {}\n", &TETRIMINOES[self.next_shape_idx]
+        result.push_str("\r\n");
+        result.push_str(&format!("score: {}\r\n", self.score));
+        result.push_str(&format!("next shape: {}\r\n", &TETRIMINOES[self.next_shape_idx]
             .style.apply_to(self.next_shape_idx.to_string())));
         result.push_str(&format!("current shape: {}\n", &TETRIMINOES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
@@ -300,7 +298,7 @@ impl GameState {
             }
             // finish the current line
             result.push_str(&curr_style.apply_to(&curr_piece).to_string());
-            result.push('\n');
+            result.push_str("\r\n");
         }
         if rewind {
             for _ in 0..(m + 5) {
