@@ -73,11 +73,31 @@ pub struct GameState {
     pub rng: Xoroshiro128StarStar,
 }
 
+fn rr() -> HashMap<(i8, i8), Vec<Point>> {
+    // 0th element in each row is the index `(rotation_from, rotation_to)`
+    let table = [
+        [(0, 1), (0, 0), (-1, 0), (-1,  1), (0, -2), (-1, -2)],
+        [(1, 0), (0, 0), ( 1, 0), ( 1, -1), (0,  2), ( 1,  2)],
+        [(1, 2), (0, 0), ( 1, 0), ( 1, -1), (0,  2), ( 1,  2)],
+        [(2, 1), (0, 0), (-1, 0), (-1,  1), (0, -2), (-1, -2)],
+        [(2, 3), (0, 0), ( 1, 0), ( 1,  1), (0, -2), ( 1, -2)],
+        [(3, 2), (0, 0), (-1, 0), (-1, -1), (0,  2), (-1,  2)],
+        [(3, 0), (0, 0), (-1, 0), (-1, -1), (0,  2), (-1,  2)],
+        [(0, 3), (0, 0), ( 1, 0), ( 1,  1), (0, -2), ( 1, -2)],
+    ];
+    // convert the table into proper structure,
+    let mut hm = HashMap::<(i8, i8), Vec<Point>>::new();
+    for row in table.iter() {
+        hm.insert(row[0], row[1..5].iter().map(|p| Point(-p.1 as i32, p.0 as i32)).collect());
+    }
+    hm
+}
+
 // IMPORTANT NOTE: Decartes coordinates are used here
 // WALL_KICKS_X - points to test for J, L, S, T, Z
 // WALL_KICKS_I - points to test for I
 lazy_static!{
-    pub static ref WALL_KICKS_X: HashMap<(i8, i8), [Point; 5]> = {
+    pub static ref WALL_KICKS_X: HashMap<(i8, i8), Vec<Point>> = {
         // 0th element in each row is the index `(rotation from, rotation to)`
         let table = [
             [(0, 1), (0, 0), (-1, 0), (-1, 1), (0,-2), (-1,-2)],
@@ -89,21 +109,34 @@ lazy_static!{
             [(3, 0), (0, 0), (-1, 0), (-1,-1), (0, 2), (-1, 2)],
             [(0, 3), (0, 0), ( 1, 0), ( 1, 1), (0,-2), ( 1,-2)],
         ];
-        // convert to
-        let mut hm = HashMap::<(i8, i8), [Point; 5]>::new();
+        // convert the table into proper structure, exchange the coordinates
+        let mut hm: HashMap<(i8, i8), Vec<Point>> = HashMap::new();
+        for row in table.iter() {
+            hm.insert(row[0],
+                row[1..5].iter().map(|xy| Point(-xy.1 as i32, xy.0 as i32)).collect()
+            );
+        }
         hm
     };
 
-    pub static ref WALL_KICKS_I: HashMap<(i8, i8), [Point; 5]> = {
-        let mut hm = HashMap::<(i8, i8), [Point; 5]>::new();
-        hm.insert((0, 1), [( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)]);
-        hm.insert((1, 0), [( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)]);
-        hm.insert((1, 2), [( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)]);
-        hm.insert((2, 1), [( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)]);
-        hm.insert((2, 3), [( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)]);
-        hm.insert((3, 2), [( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)]);
-        hm.insert((3, 0), [( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)]);
-        hm.insert((0, 3), [( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)]);
+    pub static ref WALL_KICKS_I: HashMap<(i8, i8), Vec<Point>> = {
+        let table = [
+            [(0, 1), ( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
+            [(1, 0), ( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
+            [(1, 2), ( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
+            [(2, 1), ( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
+            [(2, 3), ( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
+            [(3, 2), ( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
+            [(3, 0), ( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
+            [(0, 3), ( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
+        ];
+        // convert the table into proper structure
+        let mut hm: HashMap<(i8, i8), Vec<Point>> = HashMap::new();
+        for row in table.iter() {
+            hm.insert(row[0],
+                row[1..5].iter().map(|xy| Point(-xy.1 as i32, xy.0 as i32)).collect()
+            );
+        }
         hm
     };
 }

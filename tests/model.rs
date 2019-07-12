@@ -21,35 +21,35 @@ fn test_conversion() {
     assert_eq!(build_tetrimino(O), expected);
 
     let expected = Tetrimino {
-        diffs: vec![Point(0, -2), Point(0, 0), Point(0, 2), Point(2, 0)],
+        diffs: vec![Point(-2, 0), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
         style: Style::from_dotted_str("magenta.bold"),
     };
     assert_eq!(build_tetrimino(T), expected);
 
     let expected = Tetrimino {
-        diffs: vec![Point(-1, 0), Point(-1, 2), Point(1, -2), Point(1, 0)],
-        shift: Point(1, 0),
+        diffs: vec![Point(-2, 0), Point(-2, 2), Point(0, -2), Point(0, 0)],
+        shift: Point(0, 0),
         style: Style::from_dotted_str("green.bold"),
     };
     assert_eq!(build_tetrimino(S), expected);
 
     let expected = Tetrimino {
-        diffs: vec![Point(-1, -2), Point(-1, 0), Point(1, 0), Point(1, 2)],
-        shift: Point(1, 0),
+        diffs: vec![Point(-2, -2), Point(-2, 0), Point(0, 0), Point(0, 2)],
+        shift: Point(0, 0),
         style: Style::from_dotted_str("red.bold"),
     };
     assert_eq!(build_tetrimino(Z), expected);
 
     let expected = Tetrimino {
-        diffs: vec![Point(-2, 0), Point(0, 0), Point(2, -2), Point(2, 0)],
+        diffs: vec![Point(-2, -2), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
         style: Style::from_dotted_str("blue.bold"),
     };
     assert_eq!(build_tetrimino(J), expected);
 
     let expected = Tetrimino {
-        diffs: vec![Point(-2, 0), Point(0, 0), Point(2, 0), Point(2, 2)],
+        diffs: vec![Point(-2, 2), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
         style: Style::from_dotted_str("white.bold"),
     };
@@ -60,18 +60,18 @@ fn test_conversion() {
 fn test_rotate() {
     let piece_t = build_tetrimino(T);
 
-    let expected = vec![Point(0, -1), Point(0, 0), Point(0, 1), Point(1, 0)];
+    let expected = vec![Point(-1, 0), Point(0, -1), Point(0, 0), Point(0, 1)];
     assert_eq!(expected, rotate(&piece_t, 0));
 
-    let expected = vec![Point(1, 0), Point(0, 0), Point(-1, 0), Point(0, 1)];
+    let expected = vec![Point(0, 1), Point(-1, 0), Point(0, 0), Point(1, 0)];
     assert_eq!(expected, rotate(&piece_t, 1));
     assert_eq!(expected, rotate(&piece_t, -3));
 
-    let expected = vec![Point(0, 1), Point(0, 0), Point(0, -1), Point(-1, 0)];
+    let expected = vec![Point(1, 0), Point(0, 1), Point(0, 0), Point(0, -1)];
     assert_eq!(expected, rotate(&piece_t, 2));
     assert_eq!(expected, rotate(&piece_t, -2));
 
-    let expected = vec![Point(-1, 0), Point(0, 0), Point(1, 0), Point(0, -1)];
+    let expected = vec![Point(0, -1), Point(1, 0), Point(0, 0), Point(-1, 0)];
     assert_eq!(expected, rotate(&piece_t, 3));
     assert_eq!(expected, rotate(&piece_t, -1));
 }
@@ -98,10 +98,10 @@ fn test_try_position() {
     let expected = Some(vec![Point(1, 3), Point(1, 2), Point(1, 1), Point(1, 0)]);
     assert_eq!(expected, try_position(&field, &Point(1, 2), &piece_i, 2));
 
-    let expected = Some(vec![Point(3, 2), Point(2, 2), Point(1, 2), Point(0, 2)]);
+    let expected = Some(vec![Point(0, 2), Point(1, 2), Point(2, 2), Point(3, 2)]);
     assert_eq!(expected, try_position(&field, &Point(2, 2), &piece_i, 1));
 
-    let expected = Some(vec![Point(0, 2), Point(1, 2), Point(2, 2), Point(3, 2)]);
+    let expected = Some(vec![Point(3, 2), Point(2, 2), Point(1, 2), Point(0, 2)]);
     assert_eq!(expected, try_position(&field, &Point(2, 2), &piece_i, 3));
 
     let expected = None;
