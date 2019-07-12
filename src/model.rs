@@ -1,7 +1,9 @@
+use lazy_static;
+use std::collections::HashMap;
+use std::fmt;
 use console::Style;
 use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng};
-use std::fmt;
 use crate::tetrimino::TETRIMINOES;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
@@ -63,12 +65,47 @@ pub struct GameState {
     pub field: Field,
     pub game_over: bool,
     pub base: Point,
-    pub rotation: i32,
+    pub rotation: i8,
     pub curr_cells: Vec<Point>,
     pub curr_shape_idx: usize,
     pub next_shape_idx: usize,
     pub score: u32,
     pub rng: Xoroshiro128StarStar,
+}
+
+// IMPORTANT NOTE: Decartes coordinates are used here
+// WALL_KICKS_X - points to test for J, L, S, T, Z
+// WALL_KICKS_I - points to test for I
+lazy_static!{
+    pub static ref WALL_KICKS_X: HashMap<(i8, i8), [Point; 5]> = {
+        // 0th element in each row is the index `(rotation from, rotation to)`
+        let table = [
+            [(0, 1), (0, 0), (-1, 0), (-1, 1), (0,-2), (-1,-2)],
+            [(1, 0), (0, 0), ( 1, 0), ( 1,-1), (0, 2), ( 1, 2)],
+            [(1, 2), (0, 0), ( 1, 0), ( 1,-1), (0, 2), ( 1, 2)],
+            [(2, 1), (0, 0), (-1, 0), (-1, 1), (0,-2), (-1,-2)],
+            [(2, 3), (0, 0), ( 1, 0), ( 1, 1), (0,-2), ( 1,-2)],
+            [(3, 2), (0, 0), (-1, 0), (-1,-1), (0, 2), (-1, 2)],
+            [(3, 0), (0, 0), (-1, 0), (-1,-1), (0, 2), (-1, 2)],
+            [(0, 3), (0, 0), ( 1, 0), ( 1, 1), (0,-2), ( 1,-2)],
+        ];
+        // convert to
+        let mut hm = HashMap::<(i8, i8), [Point; 5]>::new();
+        hm
+    };
+
+    pub static ref WALL_KICKS_I: HashMap<(i8, i8), [Point; 5]> = {
+        let mut hm = HashMap::<(i8, i8), [Point; 5]>::new();
+        hm.insert((0, 1), [( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)]);
+        hm.insert((1, 0), [( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)]);
+        hm.insert((1, 2), [( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)]);
+        hm.insert((2, 1), [( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)]);
+        hm.insert((2, 3), [( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)]);
+        hm.insert((3, 2), [( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)]);
+        hm.insert((3, 0), [( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)]);
+        hm.insert((0, 3), [( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)]);
+        hm
+    };
 }
 
 impl GameState {
@@ -114,7 +151,11 @@ impl GameState {
         }
     }
 
-    pub fn try_current_shape(&self, base: &Point, rotation: i32) -> Option<Vec<Point>> {
+    pub fn find_position(&self, base: &Point, transition: (i8, i8)) -> Option<Vec<Point>> {
+        None
+    }
+
+    pub fn try_current_shape(&self, base: &Point, rotation: i8) -> Option<Vec<Point>> {
         let shape = &TETRIMINOES[self.curr_shape_idx];
         try_position(&self.field, &base, &shape, rotation)
     }
@@ -247,7 +288,7 @@ impl GameState {
             }
             Action::RotateCCW => {
                 // clear current
-                let rotation_new = self.rotation + 1;
+                let rotation_new = (self.rotation + 3) % 4;
                 // TODO wall kick
                 if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
@@ -258,7 +299,7 @@ impl GameState {
             }
             Action::RotateCW => {
                 // clear current
-                let rotation_new = self.rotation - 1;
+                let rotation_new = (self.rotation + 1) % 4;
                 // TODO wall kick
                 if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
@@ -340,7 +381,7 @@ impl GameState {
     }
 }
 
-pub fn try_position(field: &Field, base: &Point, shape: &Tetrimino, r: i32) -> Option<Vec<Point>> {
+pub fn try_position(field: &Field, base: &Point, shape: &Tetrimino, r: i8) -> Option<Vec<Point>> {
     let mut points = rotate(&shape, r);
     for d in &points {
         let i = base.0 + d.0;
@@ -361,17 +402,17 @@ pub fn try_position(field: &Field, base: &Point, shape: &Tetrimino, r: i32) -> O
     Some(points)
 }
 
-pub fn rotate(shape: &Tetrimino, r: i32) -> Vec<Point> {
+pub fn rotate(shape: &Tetrimino, r: i8) -> Vec<Point> {
     // modulo, NOT the remainder, see https://stackoverflow.com/a/41422009/5066426
     let r = (r % 4 + 4) % 4;
     let mut p = shape.clone();
     for _ in 0..r {
         for d in &mut p.diffs {
-            // rotate counterclockwise (-1, -2) => (2, -1),
-            // i.e. negate the second coordinate and then swap
-            let t = -d.1;
-            d.1 = d.0;
-            d.0 = t;
+            // rotate clockwise (-2, 1) => (1, 2),
+            // i.e. negate the first coordinate and then swap
+            let t = -d.0;
+            d.0 = d.1;
+            d.1 = t;
         }
         // swap shift
         let t = p.shift.1;

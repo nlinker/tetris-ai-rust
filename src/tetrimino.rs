@@ -49,9 +49,9 @@ pub const O: RawShape<'static> = RawShape {
 };
 pub const T: RawShape<'static> = RawShape {
     field: r#"
-        . . . .
-        * * * .
         . * . .
+        * * * .
+        . . . .
         . . . .
     "#,
     ri: 1.0,
@@ -60,42 +60,42 @@ pub const T: RawShape<'static> = RawShape {
 };
 pub const S: RawShape<'static> = RawShape {
     field: r#"
-        . . . .
         . * * .
         * * . .
         . . . .
+        . . . .
     "#,
-    ri: 1.5,
+    ri: 1.0,
     rj: 1.0,
     color: "green.bold",
 };
 pub const Z: RawShape<'static>  = RawShape {
     field: r#"
-        . . . .
         * * . .
         . * * .
         . . . .
+        . . . .
     "#,
-    ri: 1.5,
+    ri: 1.0,
     rj: 1.0,
     color: "red.bold",
 };
 pub const J: RawShape<'static> = RawShape {
     field: r#"
-        . . * .
-        . . * .
-        . * * .
+        * . . .
+        * * * .
+        . . . .
         . . . .
     "#,
     ri: 1.0,
-    rj: 2.0,
+    rj: 1.0,
     color: "blue.bold",
 };
 pub const L: RawShape<'static> = RawShape {
     field: r#"
-        . * . .
-        . * . .
-        . * * .
+        . . *.
+        * * * .
+        . . . .
         . . . .
     "#,
     ri: 1.0,
