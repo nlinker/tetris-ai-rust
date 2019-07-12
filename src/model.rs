@@ -73,30 +73,30 @@ pub struct GameState {
     pub rng: Xoroshiro128StarStar,
 }
 
-fn rr() -> HashMap<(i8, i8), Vec<Point>> {
-    // 0th element in each row is the index `(rotation_from, rotation_to)`
-    let table = [
-        [(0, 1), (0, 0), (-1, 0), (-1,  1), (0, -2), (-1, -2)],
-        [(1, 0), (0, 0), ( 1, 0), ( 1, -1), (0,  2), ( 1,  2)],
-        [(1, 2), (0, 0), ( 1, 0), ( 1, -1), (0,  2), ( 1,  2)],
-        [(2, 1), (0, 0), (-1, 0), (-1,  1), (0, -2), (-1, -2)],
-        [(2, 3), (0, 0), ( 1, 0), ( 1,  1), (0, -2), ( 1, -2)],
-        [(3, 2), (0, 0), (-1, 0), (-1, -1), (0,  2), (-1,  2)],
-        [(3, 0), (0, 0), (-1, 0), (-1, -1), (0,  2), (-1,  2)],
-        [(0, 3), (0, 0), ( 1, 0), ( 1,  1), (0, -2), ( 1, -2)],
-    ];
-    // convert the table into proper structure,
-    let mut hm = HashMap::<(i8, i8), Vec<Point>>::new();
-    for row in table.iter() {
-        hm.insert(row[0], row[1..5].iter().map(|p| Point(-p.1 as i32, p.0 as i32)).collect());
-    }
-    hm
-}
 
-// IMPORTANT NOTE: Decartes coordinates are used here
-// WALL_KICKS_X - points to test for J, L, S, T, Z
-// WALL_KICKS_I - points to test for I
 lazy_static!{
+    /// shifts to test for I
+    pub static ref WALL_KICKS_I: HashMap<(i8, i8), Vec<Point>> = {
+        let table = [
+            [(0, 1), (0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
+            [(1, 0), (0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
+            [(1, 2), (0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
+            [(2, 1), (0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
+            [(2, 3), (0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
+            [(3, 2), (0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
+            [(3, 0), (0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
+            [(0, 3), (0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
+        ];
+        // convert the table into proper structure
+        let mut hm: HashMap<(i8, i8), Vec<_>> = HashMap::new();
+        for row in table.iter() {
+            hm.insert(row[0],
+                row[1..5].iter().map(|xy| Point(-xy.1 as i32, xy.0 as i32)).collect()
+            );
+        }
+        hm
+    };
+    /// shifts to test for J, L, S, T, Z
     pub static ref WALL_KICKS_X: HashMap<(i8, i8), Vec<Point>> = {
         // 0th element in each row is the index `(rotation from, rotation to)`
         let table = [
@@ -110,28 +110,7 @@ lazy_static!{
             [(0, 3), (0, 0), ( 1, 0), ( 1, 1), (0,-2), ( 1,-2)],
         ];
         // convert the table into proper structure, exchange the coordinates
-        let mut hm: HashMap<(i8, i8), Vec<Point>> = HashMap::new();
-        for row in table.iter() {
-            hm.insert(row[0],
-                row[1..5].iter().map(|xy| Point(-xy.1 as i32, xy.0 as i32)).collect()
-            );
-        }
-        hm
-    };
-
-    pub static ref WALL_KICKS_I: HashMap<(i8, i8), Vec<Point>> = {
-        let table = [
-            [(0, 1), ( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
-            [(1, 0), ( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
-            [(1, 2), ( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
-            [(2, 1), ( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
-            [(2, 3), ( 0, 0), ( 2, 0), (-1, 0), ( 2, 1), (-1,-2)],
-            [(3, 2), ( 0, 0), (-2, 0), ( 1, 0), (-2,-1), ( 1, 2)],
-            [(3, 0), ( 0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
-            [(0, 3), ( 0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
-        ];
-        // convert the table into proper structure
-        let mut hm: HashMap<(i8, i8), Vec<Point>> = HashMap::new();
+        let mut hm: HashMap<(i8, i8), Vec<_>> = HashMap::new();
         for row in table.iter() {
             hm.insert(row[0],
                 row[1..5].iter().map(|xy| Point(-xy.1 as i32, xy.0 as i32)).collect()
@@ -184,8 +163,19 @@ impl GameState {
         }
     }
 
-    pub fn find_position(&self, base: &Point, transition: (i8, i8)) -> Option<Vec<Point>> {
-        None
+    /// transition should be the pair of `(p, q)`, where `p, q \in {0, 1, 2, 3}`
+    pub fn wall_kick_current_shape(&self, transition: (i8, i8)) -> Option<(Point, Vec<Point>)> {
+        let test_points: &[Point] = if self.curr_shape_idx == 0 {
+            &WALL_KICKS_I.get(&transition)?
+        } else {
+            &WALL_KICKS_X.get(&transition)?
+        };
+        // return the first test point, that enables the rotation around
+        test_points.into_iter().find_map(|t| {
+            let base_new = Point(self.base.0 + t.0, self.base.1 + t.1);
+            self.try_current_shape(&base_new, transition.1)
+                .map(|v| (base_new, v))
+        })
     }
 
     pub fn try_current_shape(&self, base: &Point, rotation: i8) -> Option<Vec<Point>> {
@@ -322,8 +312,9 @@ impl GameState {
             Action::RotateCCW => {
                 // clear current
                 let rotation_new = (self.rotation + 3) % 4;
-                // TODO wall kick
-                if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
+                let transition = (self.rotation, rotation_new);
+                if let Some((base, cells)) = self.wall_kick_current_shape(transition) {
+                    self.base = base;
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
@@ -333,8 +324,9 @@ impl GameState {
             Action::RotateCW => {
                 // clear current
                 let rotation_new = (self.rotation + 1) % 4;
-                // TODO wall kick
-                if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
+                let transition = (self.rotation, rotation_new);
+                if let Some((base, cells)) = self.wall_kick_current_shape(transition) {
+                    self.base = base;
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
