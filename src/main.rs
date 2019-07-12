@@ -34,13 +34,13 @@ fn main() {
                 _              => false,
             };
             if x {
-                println!("{}", gs.prettify_game_state(true, true));
+                println!("{}", gs.prettify_game_state(true, true, true));
                 stdout.flush().unwrap();
             }
         }
         if k >= 80 {
             if gs.step(Action::Tick) { break; }
-            println!("{}", gs.prettify_game_state(true, true));
+            println!("{}", gs.prettify_game_state(true, true, true));
             stdout.flush().unwrap();
             k = 0;
         } else {
@@ -48,8 +48,7 @@ fn main() {
         }
         thread::sleep(Duration::from_millis(10));
     }
-
-    write!(stdout, "{}", gs.prettify_game_state(false, true)).unwrap();
+    write!(stdout, "{}", gs.prettify_game_state(false, true, true)).unwrap();
     write!(stdout, "{}", termion::cursor::Show).unwrap();
     stdout.flush().unwrap();
 }

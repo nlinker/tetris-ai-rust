@@ -337,17 +337,28 @@ impl GameState {
         return false;
     }
 
-    /// The result is similar to (without comment sign)
+/*
+*/
+
+
+    /// In wide mode the result is similar to (without comment sign)
     /// ```
-    /// // . . .
-    /// // . . #
-    /// // . #.#
-    /// // # # #
+    /// // .    .    .    .    .
+    /// //
+    /// // .    .    .    .    .
+    /// //       %%%%
+    /// // .    .%%%%.    .    .
+    /// //       %%%%
+    /// // .    .%%%%.    .    .
+    /// //       %%%% %%%%
+    /// // .    .%%%%.%%%%.    .
+    /// //
+    /// // .    .    .    .    .
     /// ```
-    pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool) -> String {
+    pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool, wide: bool) -> String {
         let m = self.field.height;
         let n = self.field.width;
-        let mut result = String::with_capacity(m * (2 * n + 1) + 2);
+        let mut result = String::with_capacity(m * (10 * n + 1) + 2);
         result.push_str("\r\n");
         result.push_str(&format!("score: {}\r\n", self.score));
         result.push_str(&format!("next shape: {}\r\n", &TETRIMINOES[self.next_shape_idx]
@@ -355,51 +366,109 @@ impl GameState {
 
         result.push_str(&format!("current shape: {}\r\n", &TETRIMINOES[self.curr_shape_idx]
             .style.apply_to(self.curr_shape_idx.to_string())));
+
         // now put all the stuff
-        let empty_style = Style::new();
-        let mut curr_piece: String = String::with_capacity(n * 4);
-
-        for i in 0..m {
-            curr_piece.clear();
-            let mut curr_style = &empty_style;
-            let mut prev_symbol: Option<u8> = None;
-            let mut curr_symbol: Option<u8>;
-            for j in 0..n {
-                // |000|1111|22222|33|
-                // ^   ^    ^     ^  ^
-                // each line subdivides by groups, and on each boundary we
-                // output the previous group and calculate the style
-                if j != 0 {
-                    // intersperse the line with spaces
-                    curr_piece.push(' ');
-                }
-                let ij = Point(i as i32, j as i32);
-                let cell = if self.curr_cells.iter().all(|c| *c != ij) {
-                    self.field.cells[i][j]
-                } else {
-                    self.curr_shape_idx as u8 + 1
-                };
-                curr_symbol = Some(cell);
-
-                if curr_symbol != prev_symbol {
-                    // a boundary found
-                    if prev_symbol.is_some() {
-                        result.push_str(&curr_style.apply_to(&curr_piece).to_string());
-                        curr_piece.clear();
+        if wide {
+            // ----------------
+            // wide mode render
+            for i in 0..m {
+                if i == 0 {
+                    for j in 0..n {
+                        if j == 0 { result.push('.'); }
+                        result.push_str("   .");
                     }
-                    curr_style = if cell == 0 { &empty_style } else { &TETRIMINOES[cell as usize - 1].style };
+                    result.push_str("\r\n");
                 }
-
-                curr_piece.push(if cell == 0 { '.' } else { '#' });
-                prev_symbol = curr_symbol;
+                for j in 0..n {
+                    if j == 0 {
+                        result.push(' ');
+                    }
+                    let ij = Point(i as i32, j as i32);
+                    let cell = if self.curr_cells.iter().all(|c| *c != ij) {
+                        self.field.cells[i][j]
+                    } else {
+                        self.curr_shape_idx as u8 + 1
+                    };
+                    if cell == 0 {
+                        result.push_str("    ");
+                    } else {
+                        let style: &Style = &TETRIMINOES[cell as usize - 1].style;
+                        result.push_str(&style.apply_to("████").to_string());
+                    }
+                }
+                result.push_str("\r\n");
+                for j in 0..n {
+                    if j == 0 {
+                        result.push('.');
+                    }
+                    let ij = Point(i as i32, j as i32);
+                    let cell = if self.curr_cells.iter().all(|c| *c != ij) {
+                        self.field.cells[i][j]
+                    } else {
+                        self.curr_shape_idx as u8 + 1
+                    };
+                    if cell == 0 {
+                        result.push_str("   .");
+                    } else {
+                        let style: &Style = &TETRIMINOES[cell as usize - 1].style;
+                        result.push_str(&style.apply_to("████").to_string());
+                    }
+                }
+                result.push_str("\r\n");
             }
-            // finish the current line
-            result.push_str(&curr_style.apply_to(&curr_piece).to_string());
-            result.push_str("\r\n");
-        }
-        if rewind {
-            for _ in 0..(m + 5) {
-                result.push_str("\x1B[A") // up
+            if rewind {
+                for _ in 0..(2 * m + 6) {
+                    result.push_str("\x1B[A") // up
+                }
+            }
+        } else {
+            // -------------
+            // compact mode render
+            let empty_style = Style::new();
+            let mut curr_piece: String = String::with_capacity(n * 4);
+
+            for i in 0..m {
+                curr_piece.clear();
+                let mut curr_style = &empty_style;
+                let mut prev_symbol: Option<u8> = None;
+                let mut curr_symbol: Option<u8>;
+                for j in 0..n {
+                    // |000|1111|22222|33|
+                    // ^   ^    ^     ^  ^
+                    // each line subdivides by groups, and on each boundary we
+                    // output the previous group and calculate the style
+                    if j != 0 {
+                        // intersperse the line with spaces
+                        curr_piece.push(' ');
+                    }
+                    let ij = Point(i as i32, j as i32);
+                    let cell = if self.curr_cells.iter().all(|c| *c != ij) {
+                        self.field.cells[i][j]
+                    } else {
+                        self.curr_shape_idx as u8 + 1
+                    };
+                    curr_symbol = Some(cell);
+
+                    if curr_symbol != prev_symbol {
+                        // a boundary found
+                        if prev_symbol.is_some() {
+                            result.push_str(&curr_style.apply_to(&curr_piece).to_string());
+                            curr_piece.clear();
+                        }
+                        curr_style = if cell == 0 { &empty_style } else { &TETRIMINOES[cell as usize - 1].style };
+                    }
+
+                    curr_piece.push(if cell == 0 { '.' } else { '#' });
+                    prev_symbol = curr_symbol;
+                }
+                // finish the current line
+                result.push_str(&curr_style.apply_to(&curr_piece).to_string());
+                result.push_str("\r\n");
+            }
+            if rewind {
+                for _ in 0..(m + 5) {
+                    result.push_str("\x1B[A") // up
+                }
             }
         }
         result
@@ -454,7 +523,7 @@ pub fn rotate(shape: &Tetrimino, r: i8) -> Vec<Point> {
 
 impl fmt::Display for GameState {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        f.write_str(&self.prettify_game_state(false, false))?;
+        f.write_str(&self.prettify_game_state(false, false, false))?;
         Ok(())
     }
 }
