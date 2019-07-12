@@ -38,7 +38,7 @@ fn main() {
                 stdout.flush().unwrap();
             }
         }
-        if k >= 10 {
+        if k >= 80 {
             if gs.step(Action::Tick) { break; }
             println!("{}", gs.prettify_game_state(true, true));
             stdout.flush().unwrap();
@@ -46,7 +46,7 @@ fn main() {
         } else {
             k += 1;
         }
-        thread::sleep(Duration::from_millis(60));
+        thread::sleep(Duration::from_millis(10));
     }
 
     write!(stdout, "{}", gs.prettify_game_state(false, true)).unwrap();

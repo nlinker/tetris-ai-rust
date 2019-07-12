@@ -248,6 +248,7 @@ impl GameState {
             Action::RotateCCW => {
                 // clear current
                 let rotation_new = self.rotation + 1;
+                // TODO wall kick
                 if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
@@ -258,6 +259,7 @@ impl GameState {
             Action::RotateCW => {
                 // clear current
                 let rotation_new = self.rotation - 1;
+                // TODO wall kick
                 if let Some(cells) = self.try_current_shape(&self.base, rotation_new) {
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {

@@ -54,7 +54,7 @@ pub const T: RawShape<'static> = RawShape {
         . * . .
         . . . .
     "#,
-    ri: 1.5,
+    ri: 1.0,
     rj: 1.0,
     color: "magenta.bold",
 };
@@ -88,7 +88,7 @@ pub const J: RawShape<'static> = RawShape {
         . . . .
     "#,
     ri: 1.0,
-    rj: 1.5,
+    rj: 2.0,
     color: "blue.bold",
 };
 pub const L: RawShape<'static> = RawShape {
@@ -99,7 +99,7 @@ pub const L: RawShape<'static> = RawShape {
         . . . .
     "#,
     ri: 1.0,
-    rj: 1.5,
+    rj: 1.0,
     color: "white.bold",
 };
 
