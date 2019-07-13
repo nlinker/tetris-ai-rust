@@ -22,8 +22,8 @@ fn main() {
     let mut k = 0;
     loop {
         if let Some(c) = stdin.next() {
-            let k = c.unwrap().clone();
-            let x = match &k {
+            let key = c.unwrap().clone();
+            let x = match &key {
                 Key::Ctrl('c') => { break; },
                 Key::Char(' ') => { gs.step(Action::HardDrop); true },
                 Key::Left      => { gs.step(Action::Left); true }
