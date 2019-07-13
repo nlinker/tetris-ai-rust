@@ -356,6 +356,7 @@ impl GameState {
     /// // .    .    .    .    .
     /// ```
     pub fn prettify_game_state(&self, rewind: bool, _use_colors: bool, wide: bool) -> String {
+        let fill_block = "\u{25AE}".repeat(4);
         let m = self.field.height;
         let n = self.field.width;
         let mut result = String::with_capacity(m * (10 * n + 1) + 2);
@@ -393,7 +394,7 @@ impl GameState {
                         result.push_str("    ");
                     } else {
                         let style: &Style = &TETRIMINOES[cell as usize - 1].style;
-                        result.push_str(&style.apply_to("████").to_string());
+                        result.push_str(&style.apply_to(&fill_block).to_string());
                     }
                 }
                 result.push_str("\r\n");
@@ -411,7 +412,7 @@ impl GameState {
                         result.push_str("   .");
                     } else {
                         let style: &Style = &TETRIMINOES[cell as usize - 1].style;
-                        result.push_str(&style.apply_to("████").to_string());
+                        result.push_str(&style.apply_to(&fill_block).to_string());
                     }
                 }
                 result.push_str("\r\n");
