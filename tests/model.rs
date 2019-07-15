@@ -1,57 +1,56 @@
 #![feature(type_ascription)]
 
-use console::Style;
-use tetris::model::{Point, Tetrimino, Field, try_position, rotate, GameState};
-use tetris::tetrimino::{build_tetrimino, I, O, L, J, T, S, Z};
+use tetris::model::{Point, Field, try_position, rotate, GameState};
+use tetris::tetrimino::{Tetrimino, build_tetrimino, I, O, L, J, T, S, Z, Style};
 
 #[test]
 fn test_conversion() {
     let expected = Tetrimino {
         diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
         shift: Point(0, 1),
-        style: Style::from_dotted_str("cyan.bold"),
+        style: Style::Cyan,
     };
     assert_eq!(build_tetrimino(I), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-1, -1), Point(-1, 1), Point(1, -1), Point(1, 1)],
         shift: Point(1, 1),
-        style: Style::from_dotted_str("yellow.bold"),
+        style: Style::Yellow,
     };
     assert_eq!(build_tetrimino(O), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-2, 0), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
-        style: Style::from_dotted_str("magenta.bold"),
+        style: Style::Magenta,
     };
     assert_eq!(build_tetrimino(T), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-2, 0), Point(-2, 2), Point(0, -2), Point(0, 0)],
         shift: Point(0, 0),
-        style: Style::from_dotted_str("green.bold"),
+        style: Style::Green,
     };
     assert_eq!(build_tetrimino(S), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-2, -2), Point(-2, 0), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
-        style: Style::from_dotted_str("red.bold"),
+        style: Style::Red,
     };
     assert_eq!(build_tetrimino(Z), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-2, -2), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
-        style: Style::from_dotted_str("blue.bold"),
+        style: Style::Blue,
     };
     assert_eq!(build_tetrimino(J), expected);
 
     let expected = Tetrimino {
         diffs: vec![Point(-2, 2), Point(0, -2), Point(0, 0), Point(0, 2)],
         shift: Point(0, 0),
-        style: Style::from_dotted_str("white.bold"),
+        style: Style::White,
     };
     assert_eq!(build_tetrimino(L), expected);
 }

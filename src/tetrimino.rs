@@ -1,7 +1,56 @@
 
-use console::Style;
 use crate::utils::Trim;
-use crate::model::{Tetrimino, Point};
+use crate::model::Point;
+use termion::color::Color;
+use termion::{color, style};
+use std::borrow::Borrow;
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Style {
+    Empty,
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+}
+
+//impl<T> Color for Box<T> where T: Color + ?Sized {
+//    fn write_t(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+//        unimplemented!()
+//    }
+//
+//    fn write_bg(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+//        unimplemented!()
+//    }
+//}
+
+impl Style {
+    pub fn apply_to(&self, block: &str) -> String {
+        let fg: Box<dyn Color> = match self {
+            Style::Empty   => Box::new(color::Reset),
+            Style::Black   => Box::new(color::LightBlack),
+            Style::Red     => Box::new(color::LightRed),
+            Style::Green   => Box::new(color::LightGreen),
+            Style::Yellow  => Box::new(color::LightYellow),
+            Style::Blue    => Box::new(color::LightBlue),
+            Style::Magenta => Box::new(color::LightMagenta),
+            Style::Cyan    => Box::new(color::LightCyan),
+            Style::White   => Box::new(color::LightWhite),
+        };
+        format!("{}{}{}", color::Fg(fg.borrow()), block, style::Reset)
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub struct Tetrimino {
+    pub diffs: Vec<Point>,
+    pub shift: Point,
+    pub style: Style,
+}
 
 /// `field` is 4x4 field with
 /// `ri` and `rj` define rotation point
@@ -34,7 +83,7 @@ pub const I: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.5,
-    color: "cyan.bold",
+    color: "cyan",
 };
 pub const O: RawShape<'static> = RawShape {
     field: r#"
@@ -45,7 +94,7 @@ pub const O: RawShape<'static> = RawShape {
     "#,
     ri: 1.5,
     rj: 1.5,
-    color: "yellow.bold",
+    color: "yellow",
 };
 pub const T: RawShape<'static> = RawShape {
     field: r#"
@@ -56,7 +105,7 @@ pub const T: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.0,
-    color: "magenta.bold",
+    color: "magenta",
 };
 pub const S: RawShape<'static> = RawShape {
     field: r#"
@@ -67,7 +116,7 @@ pub const S: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.0,
-    color: "green.bold",
+    color: "green",
 };
 pub const Z: RawShape<'static>  = RawShape {
     field: r#"
@@ -78,7 +127,7 @@ pub const Z: RawShape<'static>  = RawShape {
     "#,
     ri: 1.0,
     rj: 1.0,
-    color: "red.bold",
+    color: "red",
 };
 pub const J: RawShape<'static> = RawShape {
     field: r#"
@@ -89,7 +138,7 @@ pub const J: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.0,
-    color: "blue.bold",
+    color: "blue",
 };
 pub const L: RawShape<'static> = RawShape {
     field: r#"
@@ -100,7 +149,7 @@ pub const L: RawShape<'static> = RawShape {
     "#,
     ri: 1.0,
     rj: 1.0,
-    color: "white.bold",
+    color: "white",
 };
 
 /// return the shape points relative of (0, 0) with parity
@@ -126,6 +175,20 @@ pub fn build_tetrimino(src: RawShape<'_>) -> Tetrimino {
         }
         ci += 1;
     }
-    let style = Style::from_dotted_str(src.color);
-    Tetrimino { diffs, shift: Point(shift_i, shift_j), style }
+    let color = color_from_str(src.color);
+    Tetrimino { diffs, shift: Point(shift_i, shift_j), style: color }
+}
+
+pub fn color_from_str(color_str: &str) -> Style {
+    match color_str {
+        "black"   => Style::Black,
+        "red"     => Style::Red,
+        "green"   => Style::Green,
+        "yellow"  => Style::Yellow,
+        "blue"    => Style::Blue,
+        "magenta" => Style::Magenta,
+        "cyan"    => Style::Cyan,
+        "white"   => Style::White,
+        _ => unreachable!(),
+    }
 }

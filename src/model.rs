@@ -1,20 +1,12 @@
 use lazy_static;
 use std::collections::HashMap;
 use std::fmt;
-use console::Style;
 use rand_xoshiro::Xoroshiro128StarStar;
 use rand::{SeedableRng, Rng};
-use crate::tetrimino::TETRIMINOES;
+use crate::tetrimino::{TETRIMINOES, Style, Tetrimino};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
-
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct Tetrimino {
-    pub diffs: Vec<Point>,
-    pub shift: Point,
-    pub style: Style,
-}
 
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
 /// Example:
@@ -363,10 +355,9 @@ impl GameState {
         result.push_str("\r\n");
         result.push_str(&format!("score: {}\r\n", self.score));
         result.push_str(&format!("next shape: {}\r\n", &TETRIMINOES[self.next_shape_idx]
-            .style.apply_to(self.next_shape_idx.to_string())));
-
+            .style.apply_to(&self.next_shape_idx.to_string())));
         result.push_str(&format!("current shape: {}\r\n", &TETRIMINOES[self.curr_shape_idx]
-            .style.apply_to(self.curr_shape_idx.to_string())));
+            .style.apply_to(&self.curr_shape_idx.to_string())));
 
         // now put all the stuff
         if wide {
@@ -393,8 +384,8 @@ impl GameState {
                     if cell == 0 {
                         result.push_str("    ");
                     } else {
-                        let style: &Style = &TETRIMINOES[cell as usize - 1].style;
-                        result.push_str(&style.apply_to(&fill_block).to_string());
+                        let color: Style = TETRIMINOES[cell as usize - 1].style;
+                        result.push_str(&color.apply_to(&fill_block));
                     }
                 }
                 result.push_str("\r\n");
@@ -411,8 +402,8 @@ impl GameState {
                     if cell == 0 {
                         result.push_str("   .");
                     } else {
-                        let style: &Style = &TETRIMINOES[cell as usize - 1].style;
-                        result.push_str(&style.apply_to(&fill_block).to_string());
+                        let color: Style = TETRIMINOES[cell as usize - 1].style;
+                        result.push_str(&color.apply_to(&fill_block));
                     }
                 }
                 result.push_str("\r\n");
@@ -425,7 +416,7 @@ impl GameState {
         } else {
             // -------------
             // compact mode render
-            let empty_style = Style::new();
+            let empty_style = Style::Empty;
             let mut curr_piece: String = String::with_capacity(n * 4);
 
             for i in 0..m {
