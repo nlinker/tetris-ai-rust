@@ -1,6 +1,7 @@
 // #![allow(unused)]
 #![feature(type_ascription)]
 
+use clap::{App, Arg};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
@@ -12,6 +13,30 @@ use std::time::Duration;
 use tetris::model::{GameState, Action};
 
 fn main() {
+    let matches = App::new("tetris-app")
+        .about("Runs various command against tetris environment")
+        .version("1.0")
+        .author("Nick <email goes here>")
+        .arg(Arg::with_name("run")
+            .help("run interactive game")
+            .short("r")
+            .long("run"))
+//        .arg(Arg::with_name("input")
+//            .help("the input file to use")
+//            .index(1)
+//            .required(true))
+        .get_matches();
+//    // Because "input" is required we can safely call unwrap() because had the user NOT
+//    // specified a value, clap would have explained the error the user, and exited.
+//    println!("Doing real work with file: {}", matches.value_of("input").unwrap() );
+
+    // We can find out whether or not debugging was turned on
+    if matches.is_present("run") {
+        run_interactive_game()
+    }
+}
+
+fn run_interactive_game() {
     let mut stdout = stdout().into_raw_mode().unwrap();
     let mut stdin = async_stdin().keys();
 
