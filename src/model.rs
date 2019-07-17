@@ -1,7 +1,7 @@
 use lazy_static;
 use std::collections::HashMap;
 use std::fmt;
-use rand_xoshiro::Xoroshiro128StarStar;
+use rand_xoshiro::Xoshiro512StarStar;
 use rand::{SeedableRng, Rng};
 use crate::tetrimino::{TETRIMINOES, Style, Tetrimino};
 
@@ -62,7 +62,7 @@ pub struct GameState {
     pub curr_shape_idx: usize,
     pub next_shape_idx: usize,
     pub score: u32,
-    pub rng: Xoroshiro128StarStar,
+    pub rng: Xoshiro512StarStar,
 }
 
 
@@ -115,9 +115,9 @@ lazy_static!{
 impl GameState {
     pub fn initial(height: usize, width: usize, seed: Option<u64>) -> GameState {
         let mut rng = if let Some(seed) = seed {
-            Xoroshiro128StarStar::seed_from_u64(seed)
+            Xoshiro512StarStar::seed_from_u64(seed)
         } else {
-            Xoroshiro128StarStar::from_entropy()
+            Xoshiro512StarStar::from_entropy()
         };
         let field = Field {
             cells: vec![vec![0; width]; height],
