@@ -7,7 +7,7 @@ RL stands for Reinforcement Learning.
 ## Useful stuff
 
 ### Super Rotation System
-![srs](img/srs-pieces.png)
+![srs](_img/srs-pieces.png)
 
 
 ### Install dependencies
