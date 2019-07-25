@@ -1,5 +1,5 @@
 [package]
-name = "rl-tetris-rust"
+name = "tetris-ai-rust"
 version = "0.1.0"
 authors = ["Nick Linker <nlinker@gmail.com>"]
 edition = "2018"
@@ -20,3 +20,4 @@ rand = "0.7.0"
 rand_xoshiro = "0.3.0"
 termion = "1.5.3"
 clap = "2.33.0"
+tensorflow = "0.13.0"
