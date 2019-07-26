@@ -207,9 +207,8 @@ impl GameState {
                 self.field.cells[i][j] = 0;
             }
         }
-        // TODO from other tetris the formula is
-        // score = 1 + (lines_cleared ** 2) * Tetris.BOARD_WIDTH
-        self.score += burn_is.len() as u32;
+        let lines_cleared = burn_is.len() as u32;
+        self.score += 1 + lines_cleared * lines_cleared * (self.field.width as u32);
     }
 
     pub fn spawn_next_shape(&mut self) -> () {
