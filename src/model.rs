@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use std::fmt;
 use rand_xoshiro::Xoshiro512StarStar;
 use rand::{SeedableRng, Rng};
+use rand::prelude::SliceRandom;
 use crate::tetrimino::{TETRIMINOES, Style, Tetrimino};
+use crate::config::{Config, Scoring, Randomness};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
@@ -54,6 +56,7 @@ pub enum Action {
 /// Essentially it is two u64 numbers, but they are private...
 #[derive(Debug, Clone)]
 pub struct GameState {
+    pub config: Config,
     pub field: Field,
     pub game_over: bool,
     pub base: Point,
@@ -63,10 +66,21 @@ pub struct GameState {
     pub next_shape_idx: usize,
     pub score: u32,
     pub rng: Xoshiro512StarStar,
+    pub rng_queue: Vec<usize>,
 }
 
 
 lazy_static!{
+    // In each 0th element in each row is the index `(rotation_from, rotation_to)`
+    // the coordinates are Descartes, the data are taken from
+    // https://tetris.fandom.com/wiki/SRS, section Wall Kicks
+    // we convert the tables to the maps `(rotation_from, rotation_to) -> [offset1,...,offset5]`
+    // rotations:
+    //      0 - without rotation,
+    //      1 - pi/2 clockwise,
+    //      2 - pi clockwise,
+    //      3 - pi/2 counterclockwise
+
     /// shifts to test for I
     pub static ref WALL_KICKS_I: HashMap<(i8, i8), Vec<Point>> = {
         let table = [
@@ -79,7 +93,6 @@ lazy_static!{
             [(3, 0), (0, 0), ( 1, 0), (-2, 0), ( 1,-2), (-2, 1)],
             [(0, 3), (0, 0), (-1, 0), ( 2, 0), (-1, 2), ( 2,-1)],
         ];
-        // convert the table into proper structure
         let mut hm: HashMap<(i8, i8), Vec<_>> = HashMap::new();
         for row in table.iter() {
             hm.insert(row[0],
@@ -90,7 +103,6 @@ lazy_static!{
     };
     /// shifts to test for J, L, S, T, Z
     pub static ref WALL_KICKS_X: HashMap<(i8, i8), Vec<Point>> = {
-        // 0th element in each row is the index `(rotation from, rotation to)`
         let table = [
             [(0, 1), (0, 0), (-1, 0), (-1, 1), (0,-2), (-1,-2)],
             [(1, 0), (0, 0), ( 1, 0), ( 1,-1), (0, 2), ( 1, 2)],
@@ -101,7 +113,6 @@ lazy_static!{
             [(3, 0), (0, 0), (-1, 0), (-1,-1), (0, 2), (-1, 2)],
             [(0, 3), (0, 0), ( 1, 0), ( 1, 1), (0,-2), ( 1,-2)],
         ];
-        // convert the table into proper structure, exchange the coordinates
         let mut hm: HashMap<(i8, i8), Vec<_>> = HashMap::new();
         for row in table.iter() {
             hm.insert(row[0],
@@ -113,7 +124,7 @@ lazy_static!{
 }
 
 impl GameState {
-    pub fn initial(height: usize, width: usize, seed: Option<u64>) -> GameState {
+    pub fn initial(height: usize, width: usize, config: Config, seed: Option<u64>) -> GameState {
         let mut rng = if let Some(seed) = seed {
             Xoshiro512StarStar::seed_from_u64(seed)
         } else {
@@ -124,12 +135,27 @@ impl GameState {
             height,
             width,
         };
-        let curr_shape_idx = rng.gen_range(0, TETRIMINOES.len());
-        let next_shape_idx = rng.gen_range(0, TETRIMINOES.len());
+        let curr_shape_idx;
+        let next_shape_idx;
+        let mut rng_queue;
+        match &config.randomness {
+            Randomness::JustRandom => {
+                next_shape_idx = rng.gen_range(0, TETRIMINOES.len());
+                curr_shape_idx = rng.gen_range(0, TETRIMINOES.len());
+                rng_queue = Vec::new();
+            },
+            Randomness::ShuffledQueue => {
+                rng_queue = (0..TETRIMINOES.len()).collect::<Vec<_>>();
+                rng_queue.shuffle(&mut rng);
+                next_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
+                curr_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
+            },
+        };
         let base = Point(1, width as i32 / 2);
         let rotation = 0;
-        if let Some(curr_cells) = try_position(&field, &base, &TETRIMINOES[curr_shape_idx], 0) {
+        if let Some(curr_cells) = try_position(&field, &base, 0, &TETRIMINOES[curr_shape_idx]) {
             GameState {
+                config,
                 field,
                 game_over: false,
                 base,
@@ -139,9 +165,11 @@ impl GameState {
                 next_shape_idx,
                 score: 0,
                 rng,
+                rng_queue,
             }
         } else {
             GameState {
+                config,
                 field,
                 game_over: true,
                 base,
@@ -151,6 +179,7 @@ impl GameState {
                 next_shape_idx,
                 score: 0,
                 rng,
+                rng_queue,
             }
         }
     }
@@ -172,7 +201,7 @@ impl GameState {
 
     pub fn try_current_shape(&self, base: &Point, rotation: i8) -> Option<Vec<Point>> {
         let shape = &TETRIMINOES[self.curr_shape_idx];
-        try_position(&self.field, &base, &shape, rotation)
+        try_position(&self.field, &base, rotation, &shape)
     }
 
     pub fn draw_current_shape(&mut self) {
@@ -207,14 +236,35 @@ impl GameState {
                 self.field.cells[i][j] = 0;
             }
         }
-        let lines_cleared = burn_is.len() as u32;
-        self.score += 1 + lines_cleared * lines_cleared * (self.field.width as u32);
+        self.score += match &self.config.scoring {
+            Scoring::BurnOnly => 1,
+            Scoring::PieceAndBurn => {
+                let lines_cleared = burn_is.len() as u32;
+                1 + lines_cleared * lines_cleared * (self.field.width as u32)
+            },
+        };
     }
 
-    pub fn spawn_next_shape(&mut self) -> () {
+    pub fn spawn_next_shape(&mut self) {
         let prev_shape_idx = self.curr_shape_idx;
         self.curr_shape_idx = self.next_shape_idx;
-        self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
+        self.next_shape_idx = match &self.config.randomness {
+            Randomness::JustRandom => self.rng.gen_range(0, TETRIMINOES.len()),
+            Randomness::ShuffledQueue => {
+                match self.rng_queue.pop() {
+                    Some(idx) => idx,
+                    None => {
+                        // the rng_queue has been fully depleted
+                        for i in 0..TETRIMINOES.len() {
+                            self.rng_queue.push(i);
+                        }
+                        self.rng_queue.shuffle(&mut self.rng);
+                        self.rng_queue.pop().unwrap() // guaranteed to exist
+                    }
+                }
+            }
+        };
+        // self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
         self.base = Point(1, self.field.width as i32 / 2);
         if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
@@ -228,6 +278,22 @@ impl GameState {
             self.curr_shape_idx = prev_shape_idx;
             self.game_over = true;
         }
+    }
+
+    pub fn drop_current_shape(&mut self) -> (i32, Option<Vec<Point>>) {
+        let mut i = self.base.0;
+        // the last valid position on the path
+        let mut cur_cells: Option<Vec<Point>> = None;
+        loop {
+            let base_new = Point(i, self.base.1);
+            let cells = self.try_current_shape(&base_new, self.rotation);
+            if cells.is_none() {
+                break;
+            }
+            cur_cells = cells;
+            i += 1;
+        }
+        (i, cur_cells)
     }
 
     pub fn step(&mut self, action: Action) -> bool {
@@ -250,23 +316,12 @@ impl GameState {
                 }
             }
             Action::HardDrop => {
-                let mut i = self.base.0;
-                // the last valid position on the path
-                let mut cur_cells: Option<Vec<Point>> = None;
-                loop {
-                    let base_new = Point(i, self.base.1);
-                    let cells = self.try_current_shape(&base_new, self.rotation);
-                    if cells.is_none() {
-                        break;
-                    }
-                    cur_cells = cells;
-                    i += 1;
-                }
+                let (ish, cur_cells) = self.drop_current_shape();
                 if let Some(cells) = cur_cells {
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
-                    self.base = Point(i, self.base.1);
+                    self.base = Point(ish, self.base.1);
                     self.draw_current_shape();
                     self.burn_lines();
                     self.spawn_next_shape();
@@ -468,8 +523,8 @@ impl GameState {
     }
 }
 
-pub fn try_position(field: &Field, base: &Point, shape: &Tetrimino, r: i8) -> Option<Vec<Point>> {
-    let mut points = rotate(&shape, r);
+pub fn try_position(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
+    let mut points = rotate(&shape, rotation);
     for d in &points {
         let i = base.0 + d.0;
         let j = base.1 + d.1;

@@ -9,7 +9,7 @@ use termion::async_stdin;
 use std::io::{Write, stdout};
 use std::thread;
 use std::time::Duration;
-
+use core::default::Default;
 use tetris::model::{GameState, Action};
 
 fn main() {
@@ -43,7 +43,7 @@ fn run_interactive_game() {
     write!(stdout, "{}{}{}", termion::clear::All, termion::cursor::Goto(1, 2), termion::cursor::Hide).unwrap();
     stdout.flush().unwrap();
 
-    let mut gs = GameState::initial(22, 10, None);
+    let mut gs = GameState::initial(22, 10, Default::default(), None);
     let mut k = 0;
     loop {
         if let Some(c) = stdin.next() {
