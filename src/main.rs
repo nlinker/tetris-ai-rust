@@ -139,6 +139,7 @@ fn run_training_process() -> failure::Fallible<()> {
     }
     let m = tch::vision::mnist::load_dir("data")?;
     println!("Cuda::is_available() = {}", Cuda::is_available());
+    println!("Cuda::cudnn_is_available() = {}", Cuda::cudnn_is_available());
     let vs = nn::VarStore::new(Device::cuda_if_available());
     let net = Net::new(&vs.root());
     let opt = nn::Adam::default().build(&vs, 1e-4)?;
