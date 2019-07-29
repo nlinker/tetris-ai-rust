@@ -1,0 +1,6 @@
+download and unzip MNIST dataset here:
+
+.rw-r--r--  7.8M  t10k-images-idx3-ubyte
+.rw-r--r--   10k  t10k-labels-idx1-ubyte
+.rw-r--r--   47M  train-images-idx3-ubyte
+.rw-r--r--   60k  train-labels-idx1-ubyte

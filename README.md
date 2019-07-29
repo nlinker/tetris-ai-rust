@@ -4,6 +4,17 @@ RL stands for Reinforcement Learning.
 
 ## Installation and run
 
+```bash
+conda create -n py37t python=3.7
+conda activate py37t
+conda install -c pytorch pytorch
+
+export LIBTORCH=~/anaconda3/envs/py37t/lib/python3.7/site-packages/torch
+export LD_LIBRARY_PATH=${LIBTORCH}/lib:${LD_LIBRARY_PATH}
+
+cargo run -- -t
+```
+
 ## Useful stuff
 
 ### Super Rotation System

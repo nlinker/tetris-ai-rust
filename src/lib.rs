@@ -1,5 +1,6 @@
 #![crate_type = "lib"]
 
+pub mod agent;
 pub mod config;
 pub mod model;
 pub mod utils;
