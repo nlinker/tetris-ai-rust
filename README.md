@@ -9,11 +9,10 @@ conda create -n py37t python=3.7
 conda activate py37t
 conda install -c pytorch pytorch
 
-export LIBTORCH=~/anaconda3/envs/py37t/lib/python3.7/site-packages/torch
-export LD_LIBRARY_PATH=${LIBTORCH}/lib:${LD_LIBRARY_PATH}
-
 # this is needed for the cuda support in tch-rs
 export TORCH_CUDA_VERSION=cu90
+export LIBTORCH=~/anaconda3/envs/py37t/lib/python3.7/site-packages/torch
+export LD_LIBRARY_PATH=${LIBTORCH}/lib:${LD_LIBRARY_PATH}
 
 cargo clean # force `tch-rs` to be compiled with the CUDA support
 cargo run -- -t

@@ -7,15 +7,16 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::async_stdin;
 use std::io::{Write, stdout};
-use std::thread;
+use std::{thread, io};
 use std::time::Duration;
 use core::default::Default;
 use tch::{nn, nn::ModuleT, nn::OptimizerConfig, Device, Tensor, Cuda};
 use tetris::model::{GameState, Action};
-use tetris::agent::DQNAgent;
+use tetris::agent::{DQNAgent, State};
 use failure::Fallible;
 
-fn main() {
+// io::Result<()>
+fn main() -> failure::Fallible<()> {
     let matches = App::new("tetris-app")
         .about("Runs various command against tetris environment")
         .version("1.0")
@@ -25,9 +26,13 @@ fn main() {
             .short("r")
             .long("run"))
         .arg(Arg::with_name("train")
-            .help("train ")
+            .help("train tetris agent")
             .short("t")
             .long("train"))
+        .arg(Arg::with_name("mnist")
+            .help("train mnist")
+            .short("m")
+            .long("mnist"))
 //        .arg(Arg::with_name("input")
 //            .help("the input file to use")
 //            .index(1)
@@ -41,15 +46,13 @@ fn main() {
     if matches.is_present("run") {
         run_interactive_game();
     }
-    if matches.is_present("train") {
-        match run_training_process() {
-            Ok(_) => println!("ok"),
-            Err(e) => {
-                println!("current dir = {}", std::env::current_dir().unwrap().display());
-                println!("{:?}", e);
-            }
-        }
+    if matches.is_present("mnist") {
+        run_training_mnist()?;
     }
+    if matches.is_present("train") {
+        run_training_agent()?;
+    }
+    Ok(())
 }
 
 fn run_interactive_game() {
@@ -94,12 +97,7 @@ fn run_interactive_game() {
     stdout.flush().unwrap();
 }
 
-fn run_training_process() -> failure::Fallible<()> {
-    let agent = DQNAgent {
-        memory: Default::default()
-    };
-
-    println!("run_training_process");
+fn run_training_mnist() -> failure::Fallible<()> {
     #[derive(Debug)]
     struct Net {
         conv1: nn::Conv2D,
@@ -153,6 +151,42 @@ fn run_training_process() -> failure::Fallible<()> {
         let test_accuracy =
             net.batch_accuracy_for_logits(&m.test_images, &m.test_labels, vs.device(), 1024);
         println!("epoch: {:4} test acc: {:5.2}%", epoch, 100. * test_accuracy,);
+    }
+    Ok(())
+}
+
+fn run_training_agent() -> failure::Fallible<()> {
+    let agent = DQNAgent {
+        conf: Default::default(),
+        memory: Default::default()
+    };
+    struct TetrisEnv(GameState);
+    impl TetrisEnv {
+        fn new() -> TetrisEnv {
+            TetrisEnv(GameState::initial(22, 10, Default::default(), None))
+        }
+        fn reset(&mut self) {
+            // TODO
+        }
+        fn get_next_states(&self) -> Vec<State> {
+            vec![]
+        }
+    }
+    let mut env = TetrisEnv::new();
+
+    let episodes = 2000;
+    let max_steps = Some(10000);
+    for episode in 0..episodes {
+        let mut steps = 0;
+        env.reset();
+//        while max_steps.is_none() || steps < max_steps.unwrap() {
+//            let next_states = env.get_next_states();
+//            let best_action = agent.select(next_states);
+//            let (reward, done) = env.run(best_action);
+//            if done {
+//                break
+//            }
+//        }
     }
     Ok(())
 }
