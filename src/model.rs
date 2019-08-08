@@ -135,52 +135,60 @@ impl GameState {
             height,
             width,
         };
+        let mut gs = GameState {
+            config,
+            field,
+            game_over: false,
+            base: Point(0, 0),
+            rotation: 0,
+            curr_cells: Vec::new(),
+            curr_shape_idx: 0,
+            next_shape_idx: 0,
+            score: 0,
+            rng,
+            rng_queue: Vec::new(),
+        };
+        gs.reset();
+        gs
+    }
+
+    /// mutate the game state to the initial one,
+    /// we don't reset random generators, but reset random queue
+    pub fn reset(&mut self) {
         let curr_shape_idx;
         let next_shape_idx;
         let mut rng_queue;
-        match &config.randomness {
+        match self.config.randomness {
             Randomness::JustRandom => {
-                next_shape_idx = rng.gen_range(0, TETRIMINOES.len());
-                curr_shape_idx = rng.gen_range(0, TETRIMINOES.len());
+                next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
+                curr_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
                 rng_queue = Vec::new();
             },
             Randomness::ShuffledQueue => {
                 rng_queue = (0..TETRIMINOES.len()).collect::<Vec<_>>();
-                rng_queue.shuffle(&mut rng);
+                rng_queue.shuffle(&mut self.rng);
                 next_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
                 curr_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
             },
-        };
-        let base = Point(1, width as i32 / 2);
-        let rotation = 0;
-        if let Some(curr_cells) = try_position(&field, &base, 0, &TETRIMINOES[curr_shape_idx]) {
-            GameState {
-                config,
-                field,
-                game_over: false,
-                base,
-                rotation,
-                curr_cells,
-                curr_shape_idx,
-                next_shape_idx,
-                score: 0,
-                rng,
-                rng_queue,
+        }
+        for i in 0..self.field.height {
+            for j in 0..self.field.width {
+                self.field.cells[i][j] = 0;
             }
+        }
+        self.base = Point(1, self.field.width as i32 / 2);
+        self.rotation = 0;
+        self.curr_shape_idx = curr_shape_idx;
+        self.next_shape_idx = next_shape_idx;
+        self.rng_queue = rng_queue;
+        self.score = 0;
+        let shape = &TETRIMINOES[curr_shape_idx];
+        if let Some(curr_cells) = try_position(&self.field, &self.base, self.rotation, shape) {
+            self.curr_cells = curr_cells;
+            self.game_over = false;
         } else {
-            GameState {
-                config,
-                field,
-                game_over: true,
-                base,
-                rotation,
-                curr_cells: vec![],
-                curr_shape_idx,
-                next_shape_idx,
-                score: 0,
-                rng,
-                rng_queue,
-            }
+            self.curr_cells = Vec::new();
+            self.game_over = true;
         }
     }
 

@@ -18,16 +18,6 @@ pub enum Style {
     White,
 }
 
-//impl<T> Color for Box<T> where T: Color + ?Sized {
-//    fn write_t(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-//        unimplemented!()
-//    }
-//
-//    fn write_bg(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-//        unimplemented!()
-//    }
-//}
-
 impl Style {
     pub fn apply_to(&self, block: &str) -> String {
         let fg: Box<dyn Color> = match self {

@@ -14,6 +14,7 @@ use tch::{nn, nn::ModuleT, nn::OptimizerConfig, Device, Tensor, Cuda};
 use tetris::model::{GameState, Action};
 use tetris::agent::{DQNAgent, State};
 use failure::Fallible;
+use tetris::train::run_training;
 
 // io::Result<()>
 fn main() -> failure::Fallible<()> {
@@ -50,7 +51,7 @@ fn main() -> failure::Fallible<()> {
         run_training_mnist()?;
     }
     if matches.is_present("train") {
-        run_training_agent()?;
+        run_training(None)?;
     }
     Ok(())
 }
@@ -151,42 +152,6 @@ fn run_training_mnist() -> failure::Fallible<()> {
         let test_accuracy =
             net.batch_accuracy_for_logits(&m.test_images, &m.test_labels, vs.device(), 1024);
         println!("epoch: {:4} test acc: {:5.2}%", epoch, 100. * test_accuracy,);
-    }
-    Ok(())
-}
-
-fn run_training_agent() -> failure::Fallible<()> {
-    let agent = DQNAgent {
-        conf: Default::default(),
-        memory: Default::default()
-    };
-    struct TetrisEnv(GameState);
-    impl TetrisEnv {
-        fn new() -> TetrisEnv {
-            TetrisEnv(GameState::initial(22, 10, Default::default(), None))
-        }
-        fn reset(&mut self) {
-            // TODO
-        }
-        fn get_next_states(&self) -> Vec<State> {
-            vec![]
-        }
-    }
-    let mut env = TetrisEnv::new();
-
-    let episodes = 2000;
-    let max_steps = Some(10000);
-    for episode in 0..episodes {
-        let mut steps = 0;
-        env.reset();
-//        while max_steps.is_none() || steps < max_steps.unwrap() {
-//            let next_states = env.get_next_states();
-//            let best_action = agent.select(next_states);
-//            let (reward, done) = env.run(best_action);
-//            if done {
-//                break
-//            }
-//        }
     }
     Ok(())
 }
