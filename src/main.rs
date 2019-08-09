@@ -12,7 +12,7 @@ use std::time::Duration;
 use core::default::Default;
 use tch::{nn, nn::ModuleT, nn::OptimizerConfig, Device, Tensor, Cuda};
 use tetris::model::{GameState, Action};
-use tetris::agent::{DQNAgent, State};
+use tetris::agent::{DQNAgent, DQNState};
 use failure::Fallible;
 use tetris::train::run_training;
 
