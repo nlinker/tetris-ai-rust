@@ -3,29 +3,36 @@ use crate::model::{GameState, rotate, Point};
 use crate::tetrimino::TETRIMINOES;
 use std::collections::HashMap;
 
+/// `lines_burnt` - how many lines has been burnt since
+/// the last state with the new action applied
 #[derive(Debug, Clone)]
-struct TetrisEnv(GameState);
+pub struct TetrisEnv {
+    pub gs: GameState,
+    pub lines_burnt: u16,
+}
 
 impl TetrisEnv {
-    fn new(seed: Option<u64>) -> TetrisEnv {
-        TetrisEnv(GameState::initial(22, 10, Default::default(), seed))
+    pub fn new(seed: Option<u64>) -> TetrisEnv {
+        TetrisEnv {
+            gs: GameState::initial(22, 10, Default::default(), seed),
+            lines_burnt: 0,
+        }
     }
 
-    fn reset(&mut self) -> DQNState {
-        self.0.reset();
-        self.convert_to_state()
+    pub fn reset(&mut self) -> DQNState {
+        self.gs.reset();
+        self.lines_burnt = 0;
+        self.convert_to_dqn_state()
     }
 
-    fn step(&mut self, action: DQNAction) -> (DQNState, DQNReward, bool) {
-        // let actions = self.derive_actions(actions);
-        // next_state, reward, done
-        (self.convert_to_state(), DQNReward(0.0), false) // TODO finish
+    pub fn step(&mut self, action: DQNAction) -> (DQNState, DQNReward, bool) {
+        // TODO finish
+        (self.convert_to_dqn_state(), DQNReward(0.0), false)
     }
 
-    fn get_next_transitions(&self) -> HashMap<DQNAction, DQNState> {
+    pub fn get_next_transitions(&self) -> HashMap<DQNAction, DQNState> {
         // called after the new piece spawn
-        let gs = &self.0;
-        let rotations = match gs.curr_shape_idx {
+        let rotations = match self.gs.curr_shape_idx {
             1 => vec![0], // O
             0 | 3 | 4 => vec![0, 1], // I, S, Z
             2 | 5 | 6 => vec![0, 1, 2, 3], // T, J, L
@@ -33,8 +40,8 @@ impl TetrisEnv {
         };
         let mut transitions = HashMap::new();
         for r in rotations {
-            let piece = rotate(&TETRIMINOES[gs.curr_shape_idx], r);
-            let width1 = gs.field.width as i32 - 1;
+            let piece = rotate(&TETRIMINOES[self.gs.curr_shape_idx], r);
+            let width1 = self.gs.field.width as i32 - 1;
             let (min_j, max_j) = piece.iter().fold((0, width1),
                                                    |acc, p| (acc.0.min(p.1), acc.1.max(p.1)));
             for j in min_j..max_j {
@@ -46,15 +53,48 @@ impl TetrisEnv {
         transitions
     }
 
-    fn convert_to_state(&self) -> DQNState {
+    pub fn get_holes(&self) -> Vec<u16> {
+        // iterate through columns, the empty square in each column with block above we call holes
+        let n = self.gs.field.width;
+        let m = self.gs.field.height;
+        let mut holes = Vec::with_capacity(n);
+        for j in 0..n {
+            let mut m1 = m;
+            for i in 0..m {
+                if self.gs.field.cells[i][j] > 0 {
+                    m1 = i;
+                    break
+                }
+            }
+            let mut holes_count = 0;
+            for i in m1..m {
+                if self.gs.field.cells[i][j] == 0 {
+                    holes_count += 1;
+                }
+            }
+            holes.push(holes_count);
+        }
+        holes
+    }
+
+//   def _number_of_holes(self, board):
+//        """Number of holes in the board (empty square with at least one block above it)"""
+//        holes = 0
+//
+//        for col in zip(*board):
+//            tail = itertools.dropwhile(lambda x: x != Tetris.MAP_BLOCK, col)
+//            holes += len([x for x in tail if x == Tetris.MAP_EMPTY])
+//
+//        return holes
+
+    fn convert_to_dqn_state(&self) -> DQNState {
         DQNState {
-            lines_burnt: 0,
+            lines_burnt: self.lines_burnt,
             holes_count: 0,
             total_bumpiness: 0,
             sum_height: 0
         }
     }
-
 }
 
 
