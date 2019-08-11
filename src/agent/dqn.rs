@@ -2,8 +2,8 @@ use std::collections::{VecDeque, HashMap};
 
 pub struct DQNState {
     pub lines_burnt: u16,
-    pub holes_count: u16,
-    pub total_bumpiness: u16,
+    pub sum_holes: u16,
+    pub sum_bumps: u16,
     pub sum_height: u16,
 }
 

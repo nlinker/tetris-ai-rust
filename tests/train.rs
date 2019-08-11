@@ -5,7 +5,7 @@ use tetris::tetrimino::{Tetrimino, build_tetrimino, I, O, L, J, T, S, Z, Style};
 use tetris::train::TetrisEnv;
 
 #[test]
-fn test_holes_count() {
+fn test_dqn_state() {
     let field = Field {
         cells: vec![
             vec![1, 0, 0, 0],
@@ -20,6 +20,10 @@ fn test_holes_count() {
     let mut gs = GameState::initial(5, 4, Default::default(), Some(33));
     gs.field = field;
     let env = TetrisEnv { gs, lines_burnt: 0 };
-    let expected = vec![2, 2, 1, 0];
-    assert_eq!(expected, env.get_holes())
+    let block_heights = env.get_block_heights();
+    assert_eq!(vec![5, 4, 3, 0], block_heights);
+    assert_eq!(5, env.get_sum_holes(&block_heights));
+    assert_eq!(5 + 4 + 3 + 0, env.get_sum_height(&block_heights));
+    assert_eq!(1 + 1 + 3, env.get_sum_bumps(&block_heights));
 }
+

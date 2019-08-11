@@ -53,46 +53,64 @@ impl TetrisEnv {
         transitions
     }
 
-    pub fn get_holes(&self) -> Vec<u16> {
-        // iterate through columns, the empty square in each column with block above we call holes
+    pub fn get_block_heights(&self) -> Vec<u16> {
         let n = self.gs.field.width;
         let m = self.gs.field.height;
-        let mut holes = Vec::with_capacity(n);
+        let mut heights = Vec::with_capacity(n);
         for j in 0..n {
-            let mut m1 = m;
+            let mut block_height = 0 as u16;
             for i in 0..m {
                 if self.gs.field.cells[i][j] > 0 {
-                    m1 = i;
+                    block_height = (m - i) as u16;
                     break
                 }
             }
-            let mut holes_count = 0;
-            for i in m1..m {
-                if self.gs.field.cells[i][j] == 0 {
-                    holes_count += 1;
-                }
-            }
-            holes.push(holes_count);
+            heights.push(block_height);
         }
-        holes
+        heights
     }
 
-//   def _number_of_holes(self, board):
-//        """Number of holes in the board (empty square with at least one block above it)"""
-//        holes = 0
-//
-//        for col in zip(*board):
-//            tail = itertools.dropwhile(lambda x: x != Tetris.MAP_BLOCK, col)
-//            holes += len([x for x in tail if x == Tetris.MAP_EMPTY])
-//
-//        return holes
+    pub fn get_sum_holes(&self, block_heights: &[u16]) -> u16 {
+        // iterate through columns, the empty cells inside j-th block we call a 'hole'
+        let n = self.gs.field.width;
+        let m = self.gs.field.height;
+        let mut sum_holes = 0;
+        for j in 0..n {
+            let m1 = m - block_heights[j] as usize;
+            for i in m1..m {
+                if self.gs.field.cells[i][j] == 0 {
+                    sum_holes += 1;
+                }
+            }
+        }
+        sum_holes
+    }
+
+    pub fn get_sum_height(&self, block_heights: &[u16]) -> u16 {
+        block_heights.iter().sum()
+    }
+
+    pub fn get_sum_bumps(&self, block_heights: &[u16]) -> u16 {
+        // sum of the differences of heights between pair of columns
+        let n = self.gs.field.width;
+        let m = self.gs.field.height;
+        let mut sum_bumps = 0;
+        block_heights.windows(2).for_each(|hs| {
+            let h1 = hs[0] as i16;
+            let h2 = hs[1] as i16;
+            let bump = (h1 - h2).abs();
+            sum_bumps += bump as u16;
+        });
+        sum_bumps
+    }
 
     fn convert_to_dqn_state(&self) -> DQNState {
+        let block_heights = self.get_block_heights();
         DQNState {
             lines_burnt: self.lines_burnt,
-            holes_count: 0,
-            total_bumpiness: 0,
-            sum_height: 0
+            sum_holes: self.get_sum_holes(&block_heights),
+            sum_bumps: self.get_sum_bumps(&block_heights),
+            sum_height: self.get_sum_height(&block_heights),
         }
     }
 }
