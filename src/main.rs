@@ -84,7 +84,8 @@ fn run_interactive_game() {
             }
         }
         if k >= 80 {
-            if gs.step(Action::Tick) { break; }
+            let (_, done) = gs.step(Action::Tick);
+            if done { break; }
             println!("{}", gs.prettify_game_state(true, true, true));
             stdout.flush().unwrap();
             k = 0;

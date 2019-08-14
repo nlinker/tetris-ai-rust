@@ -1,5 +1,5 @@
 use crate::agent::{DQNAgent, DQNState, DQNAction};
-use crate::model::{GameState, rotate, Point};
+use crate::model::{GameState, rotate, Action};
 use crate::tetrimino::TETRIMINOES;
 use std::collections::HashMap;
 
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct TetrisEnv {
     pub gs: GameState,
-    pub lines_burnt: u16,
+    pub lines_burnt: usize,
 }
 
 impl TetrisEnv {
@@ -26,8 +26,20 @@ impl TetrisEnv {
     }
 
     pub fn step(&mut self, action: DQNAction) -> (DQNState, f32, bool) {
-        // TODO finish
-        (self.convert_to_dqn_state(), 0.0, false)
+        // note: action should be valid, we perform just 'jump' into the coordinates
+        let mut gs = &mut self.gs;
+        if let Some(_) = gs.try_current_shape(&action.base, action.rotation) {
+            let old_score = gs.score;
+            gs.base = action.base;
+            gs.rotation = action.rotation;
+            let (lines_burnt, done) = gs.step(Action::HardDrop);
+            self.lines_burnt = lines_burnt;
+            let reward = (gs.score - old_score) as f32;
+            (self.convert_to_dqn_state(), reward, done)
+        } else {
+            self.lines_burnt = 0;
+            (self.convert_to_dqn_state(), 0.0, true)
+        }
     }
 
     pub fn get_next_transitions(&self) -> HashMap<DQNAction, DQNState> {
@@ -114,7 +126,6 @@ impl TetrisEnv {
         }
     }
 }
-
 
 pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
     let agent = DQNAgent {

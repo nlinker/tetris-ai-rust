@@ -7,7 +7,7 @@ use rand::prelude::SliceRandom;
 use crate::tetrimino::{TETRIMINOES, Style, Tetrimino};
 use crate::config::{Config, Scoring, Randomness};
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct Point(pub i32, pub i32);
 
 /// In the loop `i` runs from `0` to `height-1`; `j` runs from `0` to `width-1`
@@ -218,7 +218,7 @@ impl GameState {
         }
     }
 
-    pub fn burn_lines(&mut self) {
+    pub fn burn_lines(&mut self) -> usize {
         let mut burn_is: Vec<usize> = vec![];
         for i in 0..self.field.height {
             if self.field.cells[i].iter().all(|c| *c != 0) {
@@ -251,6 +251,7 @@ impl GameState {
                 1 + lines_cleared * lines_cleared * (self.field.width as u32)
             },
         };
+        burn_is.len()
     }
 
     pub fn spawn_next_shape(&mut self) {
@@ -304,10 +305,11 @@ impl GameState {
         (i, cur_cells)
     }
 
-    pub fn step(&mut self, action: Action) -> bool {
+    pub fn step(&mut self, action: Action) -> (usize, bool) {
         if self.game_over {
-            return true;
+            return (0, true);
         }
+        let mut lines_burnt = 0;
         match action {
             Action::Tick => {
                 // clear current
@@ -319,7 +321,7 @@ impl GameState {
                     }
                 } else {
                     self.draw_current_shape();
-                    self.burn_lines();
+                    lines_burnt = self.burn_lines();
                     self.spawn_next_shape();
                 }
             }
@@ -331,7 +333,7 @@ impl GameState {
                     }
                     self.base = Point(ish, self.base.1);
                     self.draw_current_shape();
-                    self.burn_lines();
+                    lines_burnt = self.burn_lines();
                     self.spawn_next_shape();
                 }
             }
@@ -390,7 +392,7 @@ impl GameState {
                 }
             }
         }
-        return false;
+        return (lines_burnt, false);
     }
 
 /*

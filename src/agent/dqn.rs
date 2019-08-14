@@ -1,7 +1,8 @@
 use std::collections::{VecDeque, HashMap};
+use crate::model::Point;
 
 pub struct DQNState {
-    pub lines_burnt: u16,
+    pub lines_burnt: usize,
     pub sum_holes: u16,
     pub sum_bumps: u16,
     pub sum_height: u16,
@@ -9,7 +10,7 @@ pub struct DQNState {
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct DQNAction {
-    pub shift: i16,
+    pub base: Point,
     pub rotation: i8,
 }
 
