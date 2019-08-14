@@ -9,8 +9,8 @@ pub struct DQNState {
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 pub struct DQNAction {
-    shift: i16,
-    rotation: i8,
+    pub shift: i16,
+    pub rotation: i8,
 }
 
 pub struct DQNReward(pub f32);
@@ -21,7 +21,7 @@ pub struct AgentConf;
 #[derive(Default)]
 pub struct DQNAgent {
     pub conf: AgentConf,
-    pub memory: VecDeque<(DQNState, DQNState, DQNReward, bool)>
+    pub memory: VecDeque<(DQNState, DQNState, f32, bool)>
 }
 
 impl DQNAgent {

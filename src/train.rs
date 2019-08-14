@@ -1,4 +1,4 @@
-use crate::agent::{DQNAgent, DQNState, DQNAction, DQNReward};
+use crate::agent::{DQNAgent, DQNState, DQNAction};
 use crate::model::{GameState, rotate, Point};
 use crate::tetrimino::TETRIMINOES;
 use std::collections::HashMap;
@@ -25,9 +25,9 @@ impl TetrisEnv {
         self.convert_to_dqn_state()
     }
 
-    pub fn step(&mut self, action: DQNAction) -> (DQNState, DQNReward, bool) {
+    pub fn step(&mut self, action: DQNAction) -> (DQNState, f32, bool) {
         // TODO finish
-        (self.convert_to_dqn_state(), DQNReward(0.0), false)
+        (self.convert_to_dqn_state(), 0.0, false)
     }
 
     pub fn get_next_transitions(&self) -> HashMap<DQNAction, DQNState> {
