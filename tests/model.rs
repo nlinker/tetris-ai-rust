@@ -1,6 +1,6 @@
 #![feature(type_ascription)]
 
-use tetris::model::{Point, Field, try_position, rotate, GameState};
+use tetris::model::{Point, Field, try_shape, rotate, GameState};
 use tetris::tetrimino::{Tetrimino, build_tetrimino, I, O, L, J, T, S, Z, Style};
 
 #[test]
@@ -60,19 +60,19 @@ fn test_rotate() {
     let piece_t = build_tetrimino(T);
 
     let expected = vec![Point(-1, 0), Point(0, -1), Point(0, 0), Point(0, 1)];
-    assert_eq!(expected, rotate(&piece_t, 0));
+    assert_eq!(rotate(&piece_t, 0), expected);
 
     let expected = vec![Point(0, 1), Point(-1, 0), Point(0, 0), Point(1, 0)];
-    assert_eq!(expected, rotate(&piece_t, 1));
-    assert_eq!(expected, rotate(&piece_t, -3));
+    assert_eq!(rotate(&piece_t, 1), expected);
+    assert_eq!(rotate(&piece_t, -3), expected);
 
     let expected = vec![Point(1, 0), Point(0, 1), Point(0, 0), Point(0, -1)];
-    assert_eq!(expected, rotate(&piece_t, 2));
-    assert_eq!(expected, rotate(&piece_t, -2));
+    assert_eq!(rotate(&piece_t, 2), expected);
+    assert_eq!(rotate(&piece_t, -2), expected);
 
     let expected = vec![Point(0, -1), Point(1, 0), Point(0, 0), Point(-1, 0)];
-    assert_eq!(expected, rotate(&piece_t, 3));
-    assert_eq!(expected, rotate(&piece_t, -1));
+    assert_eq!(rotate(&piece_t, 3), expected);
+    assert_eq!(rotate(&piece_t, -1), expected);
 }
 
 #[test]
@@ -91,20 +91,20 @@ fn test_try_position() {
     let piece_i = build_tetrimino(I);
 
     let expected = Some(vec![Point(1, 0), Point(1, 1), Point(1, 2), Point(1, 3)]);
-    assert_eq!(expected, try_position(&field, &Point(1, 2), 0, &piece_i));
+    assert_eq!(try_shape(&field, &Point(1, 2), 0, &piece_i), expected);
 
     // note the same as above, but just the order is different
     let expected = Some(vec![Point(1, 3), Point(1, 2), Point(1, 1), Point(1, 0)]);
-    assert_eq!(expected, try_position(&field, &Point(1, 2), 2, &piece_i));
+    assert_eq!(try_shape(&field, &Point(1, 2), 2, &piece_i), expected);
 
     let expected = Some(vec![Point(0, 2), Point(1, 2), Point(2, 2), Point(3, 2)]);
-    assert_eq!(expected, try_position(&field, &Point(2, 2), 1, &piece_i));
+    assert_eq!(try_shape(&field, &Point(2, 2), 1, &piece_i), expected);
 
     let expected = Some(vec![Point(3, 2), Point(2, 2), Point(1, 2), Point(0, 2)]);
-    assert_eq!(expected, try_position(&field, &Point(2, 2), 3, &piece_i));
+    assert_eq!(try_shape(&field, &Point(2, 2), 3, &piece_i), expected);
 
     let expected = None;
-    assert_eq!(expected, try_position(&field, &Point(3, 2), 1, &piece_i));
+    assert_eq!(try_shape(&field, &Point(3, 2), 1, &piece_i), expected);
 }
 
 #[test]
@@ -132,9 +132,8 @@ fn test_burn() {
         vec![2, 3, 0, 4],
         vec![0, 1, 1, 1],
     ];
-    assert_eq!(expected, gs.field.cells);
+    assert_eq!(gs.field.cells, expected);
 }
-
 
 pub fn build_field(_: &str) -> Field {
     // TODO implement this to be similar to the build_shape

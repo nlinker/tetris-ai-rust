@@ -1,11 +1,11 @@
 #![feature(type_ascription)]
 
-use tetris::model::{Point, Field, try_position, rotate, GameState};
+use tetris::model::{Point, Field, try_shape, rotate, GameState};
 use tetris::train::TetrisEnv;
 use tetris::agent::DQNAction;
 
 #[test]
-fn test_dqn_state() {
+fn test_dqn_state_after_step() {
     // an impossible state, because in the normal game blocks fall down,
     // but this state is enough to make the test
     let field = Field {
@@ -45,4 +45,25 @@ fn test_dqn_state() {
     assert_eq!(dqn_state.sum_holes, 2 + 2 + 1);
     assert_eq!(dqn_state.sum_height, 4 + 3 + 2 + 3);
     assert_eq!(dqn_state.sum_bumps, 1 + 1 + 1);
+}
+
+#[test]
+fn test_get_valid_actions() {
+    let field = Field {
+        cells: vec![
+            vec![0, 0, 0, 0],
+            vec![0, 0, 0, 0],
+            vec![3, 0, 0, 0],
+            vec![2, 0, 0, 0],
+            vec![2, 3, 0, 4],
+            vec![0, 1, 1, 1],
+        ],
+        height: 6,
+        width: 4,
+    };
+    let mut gs = GameState::initial(5, 4, Default::default(), Some(7));
+    gs.field = field;
+    let mut env = TetrisEnv { gs, lines_burnt: 0 };
+    let valid_actions = env.get_valid_actions();
+    assert_eq!(valid_actions, vec![]);
 }

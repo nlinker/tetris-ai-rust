@@ -35,6 +35,10 @@ impl Style {
     }
 }
 
+/// `diffs` - integer coordinates of the points that defines the shape,
+/// to avoid floating-point they are doubled
+/// `shift` - defines the shift before dividing by 2 and alignment to the board grid
+/// `style` - the color of the shape
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Tetrimino {
     pub diffs: Vec<Point>,

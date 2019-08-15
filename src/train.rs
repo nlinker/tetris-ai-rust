@@ -1,10 +1,10 @@
 use crate::agent::{DQNAgent, DQNState, DQNAction};
 use crate::model::{GameState, rotate, Action};
 use crate::tetrimino::TETRIMINOES;
-use std::collections::HashMap;
 
 /// `lines_burnt` - how many lines has been burnt since
-/// the last state with the new action applied
+/// the last state with the new action applied,
+/// essentially it is the part of the previous state
 #[derive(Debug, Clone)]
 pub struct TetrisEnv {
     pub gs: GameState,
@@ -26,23 +26,19 @@ impl TetrisEnv {
     }
 
     pub fn step(&mut self, action: DQNAction) -> (DQNState, f32, bool) {
-        // note: action should be valid, we perform just 'jump' into the coordinates
+        // note: action should be valid, and the game should not be stopped
+        // this is required to avoid try_current_position call
         let mut gs = &mut self.gs;
-        if let Some(_) = gs.try_current_shape(&action.base, action.rotation) {
-            let old_score = gs.score;
-            gs.base = action.base;
-            gs.rotation = action.rotation;
-            let (lines_burnt, done) = gs.step(Action::HardDrop);
-            self.lines_burnt = lines_burnt;
-            let reward = (gs.score - old_score) as f32;
-            (self.convert_to_dqn_state(), reward, done)
-        } else {
-            self.lines_burnt = 0;
-            (self.convert_to_dqn_state(), 0.0, true)
-        }
+        let old_score = gs.score;
+        gs.base = action.base;
+        gs.rotation = action.rotation;
+        let (lines_burnt, done) = gs.step(Action::HardDrop);
+        self.lines_burnt = lines_burnt;
+        let reward = (gs.score - old_score) as f32;
+        (self.convert_to_dqn_state(), reward, done)
     }
 
-    pub fn get_next_transitions(&self) -> HashMap<DQNAction, DQNState> {
+    pub fn get_valid_actions(&self) -> Vec<DQNAction> {
         // called after the new piece spawn
         let rotations = match self.gs.curr_shape_idx {
             1 => vec![0], // O
@@ -50,11 +46,13 @@ impl TetrisEnv {
             2 | 5 | 6 => vec![0, 1, 2, 3], // T, J, L
             _ => unreachable!(),
         };
-        let mut transitions = HashMap::new();
+        // in the worst case we have 4 rotations with each base
+        let mut valid_actions = Vec::with_capacity(4 * self.gs.field.width);
         for r in rotations {
             let piece = rotate(&TETRIMINOES[self.gs.curr_shape_idx], r);
-            let width1 = self.gs.field.width as i32 - 1;
-            let (min_j, max_j) = piece.iter().fold((0, width1),
+
+            let n1 = self.gs.field.width as i32 - 1;
+            let (min_j, max_j) = piece.iter().fold((0, n1),
                                                    |acc, p| (acc.0.min(p.1), acc.1.max(p.1)));
             for j in min_j..max_j {
 
@@ -62,7 +60,7 @@ impl TetrisEnv {
             // get board props
             // lines_burnt, holes_count, total_bumpiness, sum_height
         }
-        transitions
+        valid_actions
     }
 
     pub fn get_block_heights(&self) -> Vec<u16> {

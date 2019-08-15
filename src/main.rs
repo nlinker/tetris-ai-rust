@@ -13,7 +13,6 @@ use core::default::Default;
 use tch::{nn, nn::ModuleT, nn::OptimizerConfig, Device, Tensor, Cuda};
 use tetris::model::{GameState, Action};
 use tetris::agent::{DQNAgent, DQNState};
-use failure::Fallible;
 use tetris::train::run_training;
 
 // io::Result<()>
@@ -63,14 +62,19 @@ fn run_interactive_game() {
     write!(stdout, "{}{}{}", termion::clear::All, termion::cursor::Goto(1, 2), termion::cursor::Hide).unwrap();
     stdout.flush().unwrap();
 
-    let mut gs = GameState::initial(22, 10, Default::default(), None);
+    let mut gs = GameState::initial(22, 10, Default::default(), Some(7));
     let mut k = 0;
+    let k_delay = 100;
+    {
+        println!("{}", gs.prettify_game_state(true, true, true));
+        stdout.flush().unwrap();
+    }
     loop {
         if let Some(c) = stdin.next() {
             let key = c.unwrap().clone();
             let x = match &key {
                 Key::Ctrl('c') => { break; },
-                Key::Char(' ') => { gs.step(Action::HardDrop); true },
+                Key::Char(' ') => { gs.step(Action::HardDrop); k = 0; true },
                 Key::Left      => { gs.step(Action::Left); true }
                 Key::Right     => { gs.step(Action::Right); true }
                 Key::Down      => { gs.step(Action::Down); true }
@@ -83,7 +87,7 @@ fn run_interactive_game() {
                 stdout.flush().unwrap();
             }
         }
-        if k >= 80 {
+        if k >= k_delay {
             let (_, done) = gs.step(Action::Tick);
             if done { break; }
             println!("{}", gs.prettify_game_state(true, true, true));

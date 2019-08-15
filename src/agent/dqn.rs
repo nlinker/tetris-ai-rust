@@ -1,6 +1,7 @@
 use std::collections::{VecDeque, HashMap};
 use crate::model::Point;
 
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct DQNState {
     pub lines_burnt: usize,
     pub sum_holes: u16,
@@ -8,15 +9,13 @@ pub struct DQNState {
     pub sum_height: u16,
 }
 
-#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct DQNAction {
     pub base: Point,
     pub rotation: i8,
 }
 
-pub struct DQNReward(pub f32);
-
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AgentConf;
 
 #[derive(Default)]

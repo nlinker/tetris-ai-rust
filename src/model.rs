@@ -79,7 +79,7 @@ lazy_static!{
     //      0 - without rotation,
     //      1 - pi/2 clockwise,
     //      2 - pi clockwise,
-    //      3 - pi/2 counterclockwise
+    //      3 - 3pi/2 clockwise = pi/2 counterclockwise
 
     /// shifts to test for I
     pub static ref WALL_KICKS_I: HashMap<(i8, i8), Vec<Point>> = {
@@ -176,14 +176,20 @@ impl GameState {
                 self.field.cells[i][j] = 0;
             }
         }
-        self.base = Point(1, self.field.width as i32 / 2);
-        self.rotation = 0;
         self.curr_shape_idx = curr_shape_idx;
         self.next_shape_idx = next_shape_idx;
         self.rng_queue = rng_queue;
+        // TODO deduplicate with spawn_new_shape function
+        self.base = if self.curr_shape_idx == 0 {
+            // if it is horizontal I shape
+            Point(0, self.field.width as i32 / 2)
+        } else {
+            Point(1, self.field.width as i32 / 2)
+        };
+        self.rotation = 0;
         self.score = 0;
         let shape = &TETRIMINOES[curr_shape_idx];
-        if let Some(curr_cells) = try_position(&self.field, &self.base, self.rotation, shape) {
+        if let Some(curr_cells) = try_shape(&self.field, &self.base, self.rotation, shape) {
             self.curr_cells = curr_cells;
             self.game_over = false;
         } else {
@@ -209,7 +215,7 @@ impl GameState {
 
     pub fn try_current_shape(&self, base: &Point, rotation: i8) -> Option<Vec<Point>> {
         let shape = &TETRIMINOES[self.curr_shape_idx];
-        try_position(&self.field, &base, rotation, &shape)
+        try_shape(&self.field, &base, rotation, &shape)
     }
 
     pub fn draw_current_shape(&mut self) {
@@ -275,7 +281,12 @@ impl GameState {
         };
         // self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
-        self.base = Point(1, self.field.width as i32 / 2);
+        self.base = if self.curr_shape_idx == 0 {
+            // if it is horizontal I shape
+            Point(0, self.field.width as i32 / 2)
+        } else {
+            Point(1, self.field.width as i32 / 2)
+        };
         if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
             for i in 0..cells.len() {
                 self.curr_cells[i] = cells[i];
@@ -533,11 +544,11 @@ impl GameState {
     }
 }
 
-pub fn try_position(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
+pub fn try_shape(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
     let mut points = rotate(&shape, rotation);
-    for d in &points {
-        let i = base.0 + d.0;
-        let j = base.1 + d.1;
+    for p in &points {
+        let i = base.0 + p.0;
+        let j = base.1 + p.1;
         if i < 0 || field.height as i32 <= i {
             return None;
         } else if j < 0 || field.width as i32 <= j {
@@ -547,9 +558,9 @@ pub fn try_position(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino
         }
     }
     // shift points w.r.t. base
-    for d in &mut points {
-        d.0 = base.0 + d.0;
-        d.1 = base.1 + d.1;
+    for p in &mut points {
+        p.0 = base.0 + p.0;
+        p.1 = base.1 + p.1;
     }
     Some(points)
 }
