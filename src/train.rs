@@ -46,10 +46,14 @@ impl TetrisEnv {
             2 | 5 | 6 => vec![0, 1, 2, 3], // T, J, L
             _ => unreachable!(),
         };
-        // in the worst case we have 4 rotations with each base
+        // in the worst case we have 4 rotations with each base, so the memory
         let mut valid_actions = Vec::with_capacity(4 * self.gs.field.width);
         for r in rotations {
             let piece = rotate(&TETRIMINOES[self.gs.curr_shape_idx], r);
+            // from the current base we try to step left and right until the shape is valid
+            for j in 0..self.gs.field.width / 2 {
+
+            }
 
             let n1 = self.gs.field.width as i32 - 1;
             let (min_j, max_j) = piece.iter().fold((0, n1),

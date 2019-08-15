@@ -544,23 +544,30 @@ impl GameState {
     }
 }
 
-pub fn try_shape(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
-    let mut points = rotate(&shape, rotation);
-    for p in &points {
-        let i = base.0 + p.0;
-        let j = base.1 + p.1;
+pub fn is_valid(field: &Field, points: &[Point]) -> bool {
+    for p in points {
+        let i = p.0;
+        let j = p.1;
         if i < 0 || field.height as i32 <= i {
-            return None;
+            return false;
         } else if j < 0 || field.width as i32 <= j {
-            return None;
+            return false;
         } else if field.cells[i as usize][j as usize] != 0 {
-            return None;
+            return false;
         }
     }
+    true
+}
+
+pub fn try_shape(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
+    let mut points = rotate(&shape, rotation);
     // shift points w.r.t. base
     for p in &mut points {
         p.0 = base.0 + p.0;
         p.1 = base.1 + p.1;
+    }
+    if !is_valid(field, &points) {
+        return None;
     }
     Some(points)
 }
