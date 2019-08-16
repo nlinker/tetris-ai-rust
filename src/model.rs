@@ -125,7 +125,7 @@ lazy_static!{
 
 impl GameState {
     pub fn initial(height: usize, width: usize, config: Config, seed: Option<u64>) -> GameState {
-        let mut rng = if let Some(seed) = seed {
+        let rng = if let Some(seed) = seed {
             Xoshiro512StarStar::seed_from_u64(seed)
         } else {
             Xoshiro512StarStar::from_entropy()
@@ -544,10 +544,14 @@ impl GameState {
     }
 }
 
-pub fn is_valid(field: &Field, points: &[Point]) -> bool {
+/// This function accepts base and points and not only points, because
+/// this allows us not to mutate points and get easier interface on the client
+/// side, when we want to check multiple positions of the same shape with
+/// the only base changed.
+pub fn is_valid(field: &Field, base: &Point, points: &[Point]) -> bool {
     for p in points {
-        let i = p.0;
-        let j = p.1;
+        let i = base.0 + p.0;
+        let j = base.0 + p.1;
         if i < 0 || field.height as i32 <= i {
             return false;
         } else if j < 0 || field.width as i32 <= j {
@@ -561,13 +565,13 @@ pub fn is_valid(field: &Field, points: &[Point]) -> bool {
 
 pub fn try_shape(field: &Field, base: &Point, rotation: i8, shape: &Tetrimino) -> Option<Vec<Point>> {
     let mut points = rotate(&shape, rotation);
+    if !is_valid(field, base, &points) {
+        return None;
+    }
     // shift points w.r.t. base
     for p in &mut points {
         p.0 = base.0 + p.0;
         p.1 = base.1 + p.1;
-    }
-    if !is_valid(field, &points) {
-        return None;
     }
     Some(points)
 }

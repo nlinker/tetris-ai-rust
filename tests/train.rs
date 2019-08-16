@@ -1,6 +1,6 @@
 #![feature(type_ascription)]
 
-use tetris::model::{Point, Field, try_shape, rotate, GameState};
+use tetris::model::{Point, Field, try_shape, rotate, GameState, Action};
 use tetris::train::TetrisEnv;
 use tetris::agent::DQNAction;
 
@@ -19,16 +19,16 @@ fn test_dqn_state_after_step() {
         height: 5,
         width: 4,
     };
-    let mut gs = GameState::initial(5, 4, Default::default(), Some(33));
+    let mut gs = GameState::initial(5, 4, Default::default(), Some(7));
     gs.field = field;
     gs.curr_shape_idx = 0;
     gs.rotation = 1;
     gs.base = Point(2, 3);
-    let dqn_action = DQNAction { base: gs.base, rotation: gs.rotation };
     gs.curr_cells = gs.try_current_shape(&gs.base, gs.rotation).unwrap();
     let mut env = TetrisEnv { gs, lines_burnt: 0 };
     // the bottom line should be burnt
     // let dqn_action = DQNAction { base: gs.base, rotation: gs.rotation }; <- cannot do here
+    let dqn_action = DQNAction { actions: vec![Action::HardDrop] };
     let (dqn_state, reward, done) = env.step(dqn_action);
     // the cells are = [
     //    [0, 0, 0, 0]

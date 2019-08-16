@@ -1,5 +1,5 @@
 use crate::agent::{DQNAgent, DQNState, DQNAction};
-use crate::model::{GameState, rotate, Action};
+use crate::model::{GameState, rotate, Action, Point, is_valid};
 use crate::tetrimino::TETRIMINOES;
 
 /// `lines_burnt` - how many lines has been burnt since
@@ -25,17 +25,19 @@ impl TetrisEnv {
         self.convert_to_dqn_state()
     }
 
-    pub fn step(&mut self, action: DQNAction) -> (DQNState, f32, bool) {
-        // note: action should be valid, and the game should not be stopped
-        // this is required to avoid try_current_position call
-        let mut gs = &mut self.gs;
+    pub fn step(&mut self, dqn_action: DQNAction) -> (DQNState, f32, bool) {
+        // note: dqn_action should be valid,
+        // the last action in the sequence must be Action::HardDrop to get
+        // the correct `lines_burnt` value
+        let gs = &mut self.gs;
         let old_score = gs.score;
-        gs.base = action.base;
-        gs.rotation = action.rotation;
-        let (lines_burnt, done) = gs.step(Action::HardDrop);
-        self.lines_burnt = lines_burnt;
+        for action in dqn_action.actions {
+            let (lines_burnt, done) = gs.step(action);
+            self.lines_burnt = lines_burnt;
+            if done { break; }
+        }
         let reward = (gs.score - old_score) as f32;
-        (self.convert_to_dqn_state(), reward, done)
+        (self.convert_to_dqn_state(), reward, self.gs.game_over)
     }
 
     pub fn get_valid_actions(&self) -> Vec<DQNAction> {
@@ -47,25 +49,48 @@ impl TetrisEnv {
             _ => unreachable!(),
         };
         // in the worst case we have 4 rotations with each base, so the memory
-        let mut valid_actions = Vec::with_capacity(4 * self.gs.field.width);
+        let mut valid_actions = Vec::with_capacity(self.gs.field.width);
         for r in rotations {
+            let mut actions = Vec::with_capacity(self.gs.field.width + 2);
             let piece = rotate(&TETRIMINOES[self.gs.curr_shape_idx], r);
+            (0..r).for_each(|_| actions.push(Action::RotateCW));
             // from the current base we try to step left and right until the shape is valid
+            for i in 0..2 {
+                let base = Point(self.gs.base.0 + (i as i32), self.gs.base.1);
+                if is_valid(&self.gs.field, &base, &piece) {
+                    actions.push(Action::Down);
+                    break;
+                }
+            }
+            // left
             for j in 0..self.gs.field.width / 2 {
-
+                let base = Point(self.gs.base.0, self.gs.base.1 - (j as i32));
+                if is_valid(&self.gs.field, &base, &piece) {
+                    actions.push(Action::Left);
+                } else {
+                    break;
+                }
             }
-
-            let n1 = self.gs.field.width as i32 - 1;
-            let (min_j, max_j) = piece.iter().fold((0, n1),
-                                                   |acc, p| (acc.0.min(p.1), acc.1.max(p.1)));
-            for j in min_j..max_j {
-
+            // right
+            for j in 0..self.gs.field.width / 2 {
+                let base = Point(self.gs.base.0, self.gs.base.1 + (j as i32));
+                if is_valid(&self.gs.field, &base, &piece) {
+                    actions.push(Action::Right);
+                } else {
+                    break;
+                }
             }
+            valid_actions.push(DQNAction { actions });
             // get board props
             // lines_burnt, holes_count, total_bumpiness, sum_height
         }
         valid_actions
     }
+
+    pub fn convert_to_dqn_action(actions: Vec<Action>) -> DQNAction {
+        unimplemented!()
+    }
+
 
     pub fn get_block_heights(&self) -> Vec<u16> {
         let n = self.gs.field.width;
@@ -140,7 +165,7 @@ pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
     let replay_memory_init_size = 50000;
 
     println!("Populating replay memory...");
-    let mut state = env.reset();
+    let state = env.reset();
     for _ in 0..replay_memory_init_size {
 
     }
