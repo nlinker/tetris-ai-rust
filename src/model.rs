@@ -551,7 +551,7 @@ impl GameState {
 pub fn is_valid(field: &Field, base: &Point, points: &[Point]) -> bool {
     for p in points {
         let i = base.0 + p.0;
-        let j = base.0 + p.1;
+        let j = base.1 + p.1;
         if i < 0 || field.height as i32 <= i {
             return false;
         } else if j < 0 || field.width as i32 <= j {
