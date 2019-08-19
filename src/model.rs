@@ -180,12 +180,7 @@ impl GameState {
         self.next_shape_idx = next_shape_idx;
         self.rng_queue = rng_queue;
         // TODO deduplicate with spawn_new_shape function
-        self.base = if self.curr_shape_idx == 0 {
-            // if it is horizontal I shape
-            Point(0, self.field.width as i32 / 2)
-        } else {
-            Point(1, self.field.width as i32 / 2)
-        };
+        self.base = Point(1, self.field.width as i32 / 2);
         self.rotation = 0;
         self.score = 0;
         let shape = &TETRIMINOES[curr_shape_idx];
@@ -199,7 +194,7 @@ impl GameState {
     }
 
     /// transition should be the pair of `(p, q)`, where `p, q \in {0, 1, 2, 3}`
-    pub fn wall_kick_current_shape(&self, transition: (i8, i8)) -> Option<(Point, Vec<Point>)> {
+    pub fn try_wall_kick_current_shape(&self, transition: (i8, i8)) -> Option<(Point, Vec<Point>)> {
         let test_points: &[Point] = if self.curr_shape_idx == 0 {
             &WALL_KICKS_I.get(&transition)?
         } else {
@@ -281,12 +276,7 @@ impl GameState {
         };
         // self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
-        self.base = if self.curr_shape_idx == 0 {
-            // if it is horizontal I shape
-            Point(0, self.field.width as i32 / 2)
-        } else {
-            Point(1, self.field.width as i32 / 2)
-        };
+        self.base = Point(1, self.field.width as i32 / 2);
         if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
             for i in 0..cells.len() {
                 self.curr_cells[i] = cells[i];
@@ -382,7 +372,7 @@ impl GameState {
                 // clear current
                 let rotation_new = (self.rotation + 3) % 4;
                 let transition = (self.rotation, rotation_new);
-                if let Some((base, cells)) = self.wall_kick_current_shape(transition) {
+                if let Some((base, cells)) = self.try_wall_kick_current_shape(transition) {
                     self.base = base;
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {
@@ -394,7 +384,7 @@ impl GameState {
                 // clear current
                 let rotation_new = (self.rotation + 1) % 4;
                 let transition = (self.rotation, rotation_new);
-                if let Some((base, cells)) = self.wall_kick_current_shape(transition) {
+                if let Some((base, cells)) = self.try_wall_kick_current_shape(transition) {
                     self.base = base;
                     self.rotation = rotation_new;
                     for i in 0..cells.len() {

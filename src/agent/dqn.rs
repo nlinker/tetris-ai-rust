@@ -11,7 +11,8 @@ pub struct DQNState {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct DQNAction {
-    pub actions: Vec<Action>
+    pub base: Point,
+    pub rotation: i8
 }
 
 #[derive(Default, Debug)]

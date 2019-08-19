@@ -64,7 +64,7 @@ fn run_interactive_game() {
 
     let mut gs = GameState::initial(22, 10, Default::default(), Some(7));
     let mut k = 0;
-    let k_delay = 100;
+    let k_delay = 1000;
     {
         println!("{}", gs.prettify_game_state(true, true, true));
         stdout.flush().unwrap();

@@ -1,6 +1,7 @@
 use crate::agent::{DQNAgent, DQNState, DQNAction};
-use crate::model::{GameState, rotate, Action, Point, is_valid};
+use crate::model::{GameState, rotate, Action, Point, is_valid, try_shape};
 use crate::tetrimino::TETRIMINOES;
+use failure::_core::sync::atomic::Ordering::AcqRel;
 
 /// `lines_burnt` - how many lines has been burnt since
 /// the last state with the new action applied,
@@ -31,11 +32,13 @@ impl TetrisEnv {
         // the correct `lines_burnt` value
         let gs = &mut self.gs;
         let old_score = gs.score;
-        for action in dqn_action.actions {
-            let (lines_burnt, done) = gs.step(action);
-            self.lines_burnt = lines_burnt;
-            if done { break; }
+        gs.base = dqn_action.base;
+        gs.rotation = dqn_action.rotation;
+        if let Some(cells) = gs.try_current_shape(&dqn_action.base, dqn_action.rotation) {
+            gs.curr_cells = cells;
         }
+        let (lines_burnt, _) = gs.step(Action::HardDrop);
+        self.lines_burnt = lines_burnt;
         let reward = (gs.score - old_score) as f32;
         (self.convert_to_dqn_state(), reward, self.gs.game_over)
     }
@@ -49,40 +52,56 @@ impl TetrisEnv {
             _ => unreachable!(),
         };
         // in the worst case we have 4 rotations with each base, so the memory
-        let mut valid_actions = Vec::with_capacity(self.gs.field.width);
+        let n = self.gs.field.width;
+        let mut valid_actions = Vec::new();
+        let mut gs_base = self.gs.base;
+        let mut gs_cells = rotate(&TETRIMINOES[self.gs.curr_shape_idx], self.gs.rotation);
         for r in rotations {
-            let mut actions = Vec::with_capacity(self.gs.field.width + 2);
-            let piece = rotate(&TETRIMINOES[self.gs.curr_shape_idx], r);
-            (0..r).for_each(|_| actions.push(Action::RotateCW));
-            // from the current base we try to step left and right until the shape is valid
-            for i in 0..2 {
-                let base = Point(self.gs.base.0 + (i as i32), self.gs.base.1);
-                if is_valid(&self.gs.field, &base, &piece) {
-                    actions.push(Action::Down);
+            if r > 0 {
+                // we do the complex try_wall_kick_current_shape instead of
+                // just rotate, because some shapes can be rotated only with the shift down
+                if let Some((base, cells)) = self.gs.try_wall_kick_current_shape((r - 1, r)) {
+                    gs_base = base;
+                    gs_cells = cells;
+                } else {
+                    // no more rotations is possible
                     break;
                 }
             }
+            // initial position
+            {
+                let base = Point(gs_base.0, gs_base.1);
+                if is_valid(&self.gs.field, &base, &gs_cells) {
+                    valid_actions.push(DQNAction {
+                        base,
+                        rotation: r
+                    });
+                }
+            }
             // left
-            for j in 0..self.gs.field.width / 2 {
-                let base = Point(self.gs.base.0, self.gs.base.1 - (j as i32));
-                if is_valid(&self.gs.field, &base, &piece) {
-                    actions.push(Action::Left);
+            for j in 1..n {
+                let base = Point(gs_base.0, gs_base.1 - (j as i32));
+                if is_valid(&self.gs.field, &base, &gs_cells) {
+                    valid_actions.push(DQNAction {
+                        base,
+                        rotation: r
+                    });
                 } else {
                     break;
                 }
             }
             // right
-            for j in 0..self.gs.field.width / 2 {
-                let base = Point(self.gs.base.0, self.gs.base.1 + (j as i32));
-                if is_valid(&self.gs.field, &base, &piece) {
-                    actions.push(Action::Right);
+            for j in 1..n {
+                let base = Point(gs_base.0, gs_base.1 + (j as i32));
+                if is_valid(&self.gs.field, &base, &gs_cells) {
+                    valid_actions.push(DQNAction {
+                        base,
+                        rotation: r
+                    });
                 } else {
                     break;
                 }
             }
-            valid_actions.push(DQNAction { actions });
-            // get board props
-            // lines_burnt, holes_count, total_bumpiness, sum_height
         }
         valid_actions
     }
@@ -90,7 +109,6 @@ impl TetrisEnv {
     pub fn convert_to_dqn_action(actions: Vec<Action>) -> DQNAction {
         unimplemented!()
     }
-
 
     pub fn get_block_heights(&self) -> Vec<u16> {
         let n = self.gs.field.width;

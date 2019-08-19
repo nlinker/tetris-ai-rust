@@ -4,10 +4,10 @@ use tetris::model::{Point, Field, try_shape, rotate, GameState};
 use tetris::tetrimino::{Tetrimino, build_tetrimino, I, O, L, J, T, S, Z, Style};
 
 #[test]
-fn test_conversion() {
+fn test_build_tetrimino() {
     let expected = Tetrimino {
-        diffs: vec![Point(0, -3), Point(0, -1), Point(0, 1), Point(0, 3)],
-        shift: Point(0, 1),
+        diffs: vec![Point(-1, -3), Point(-1, -1), Point(-1, 1), Point(-1, 3)],
+        shift: Point(1, 1),
         style: Style::Cyan,
     };
     assert_eq!(build_tetrimino(I), expected);
@@ -56,7 +56,7 @@ fn test_conversion() {
 }
 
 #[test]
-fn test_rotate() {
+fn test_rotate_t() {
     let piece_t = build_tetrimino(T);
 
     let expected = vec![Point(-1, 0), Point(0, -1), Point(0, 0), Point(0, 1)];
@@ -76,6 +76,23 @@ fn test_rotate() {
 }
 
 #[test]
+fn test_rotate_i() {
+    let piece_t = build_tetrimino(I);
+
+    let expected = vec![Point(-1, -2), Point(-1, -1), Point(-1, 0), Point(-1, 1)];
+    assert_eq!(rotate(&piece_t, 0), expected);
+
+    let expected = vec![Point(-2, 0), Point(-1, 0), Point(0, 0), Point(1, 0)];
+    assert_eq!(rotate(&piece_t, 1), expected);
+
+    let expected = vec![Point(0, 1), Point(0, 0), Point(0, -1), Point(0, -2)];
+    assert_eq!(rotate(&piece_t, 2), expected);
+
+    let expected = vec![Point(1, -1), Point(0, -1), Point(-1, -1), Point(-2, -1)];
+    assert_eq!(rotate(&piece_t, 3), expected);
+}
+
+#[test]
 fn test_try_position() {
     let field = Field {
         cells: vec![
@@ -90,7 +107,7 @@ fn test_try_position() {
     };
     let piece_i = build_tetrimino(I);
 
-    let expected = Some(vec![Point(1, 0), Point(1, 1), Point(1, 2), Point(1, 3)]);
+    let expected = Some(vec![Point(0, 0), Point(0, 1), Point(0, 2), Point(0, 3)]);
     assert_eq!(try_shape(&field, &Point(1, 2), 0, &piece_i), expected);
 
     // note the same as above, but just the order is different
@@ -100,7 +117,7 @@ fn test_try_position() {
     let expected = Some(vec![Point(0, 2), Point(1, 2), Point(2, 2), Point(3, 2)]);
     assert_eq!(try_shape(&field, &Point(2, 2), 1, &piece_i), expected);
 
-    let expected = Some(vec![Point(3, 2), Point(2, 2), Point(1, 2), Point(0, 2)]);
+    let expected = Some(vec![Point(3, 1), Point(2, 1), Point(1, 1), Point(0, 1)]);
     assert_eq!(try_shape(&field, &Point(2, 2), 3, &piece_i), expected);
 
     let expected = None;

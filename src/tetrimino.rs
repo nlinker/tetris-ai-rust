@@ -75,7 +75,7 @@ pub const I: RawShape<'static> = RawShape {
         . . . .
         . . . .
     "#,
-    ri: 1.0,
+    ri: 1.5,
     rj: 1.5,
     color: "cyan",
 };
@@ -160,8 +160,9 @@ pub fn build_tetrimino(src: RawShape<'_>) -> Tetrimino {
                 let i = (2.0 * ((ci as f32) - src.ri)).trunc() as i32;
                 let j = (2.0 * ((cj as f32) - src.rj)).trunc() as i32;
                 diffs.push(Point(i, j));
-                if i % 2 == 1 { shift_i = 1; }
-                if j % 2 == 1 { shift_j = 1; }
+                // note: i and j may be negative, hence odd/even test should take it into account
+                if (i % 2 + 2) % 2 == 1 { shift_i = 1; }
+                if (j % 2 + 2) % 2 == 1 { shift_j = 1; }
                 cj += 1;
             } else if c == '.' {
                 cj += 1;
