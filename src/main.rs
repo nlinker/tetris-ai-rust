@@ -88,14 +88,14 @@ fn run_interactive_game() {
             }
         }
         if k >= k_delay {
-            let (_, done) = gs.step(Action::Tick);
-            if done { break; }
+            let _ = gs.step(Action::Tick);
             println!("{}", gs.prettify_game_state(true, true, true));
             stdout.flush().unwrap();
             k = 0;
         } else {
             k += 1;
         }
+        if gs.game_over { break; }
         thread::sleep(Duration::from_millis(10));
     }
     write!(stdout, "{}", gs.prettify_game_state(false, true, true)).unwrap();

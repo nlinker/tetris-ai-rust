@@ -21,17 +21,18 @@ fn test_dqn_state_after_step() {
     };
     let mut gs = GameState::initial(5, 4, Default::default(), Some(7));
     gs.field = field;
+    gs.game_over = false;
     gs.curr_shape_idx = 0;
     gs.rotation = 1;
-    gs.base = Point(2, 3);
+    gs.base = Point(1, 2);
     gs.curr_cells = gs.try_current_shape(&gs.base, gs.rotation).unwrap();
-    let mut env = TetrisEnv { gs, lines_burnt: 0 };
     // the bottom line should be burnt
     // let dqn_action = DQNAction { base: gs.base, rotation: gs.rotation }; <- cannot do here
     let dqn_action = DQNAction {
-        base: Point(2, 3),
-        rotation: 1
+        base: gs.base,
+        rotation: gs.rotation,
     };
+    let mut env = TetrisEnv { gs, lines_burnt: 0 };
     let (dqn_state, reward, done) = env.step(dqn_action);
     // the cells are = [
     //    [0, 0, 0, 0]

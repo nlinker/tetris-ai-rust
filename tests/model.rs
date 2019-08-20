@@ -1,6 +1,6 @@
 #![feature(type_ascription)]
 
-use tetris::model::{Point, Field, try_shape, rotate, GameState};
+use tetris::model::{Point, Field, try_shape, rotate, GameState, Action};
 use tetris::tetrimino::{Tetrimino, build_tetrimino, I, O, L, J, T, S, Z, Style};
 
 #[test]
@@ -163,6 +163,31 @@ fn test_burn() {
     ];
     assert_eq!(gs.field.cells, expected);
 }
+
+#[test]
+fn test_hard_drop() {
+    // the situation when hard drop makes impossible to spawn the next piece
+    let field = Field {
+        cells: vec![
+            vec![0, 0, 0, 0],
+            vec![0, 0, 0, 0],
+            vec![0, 1, 1, 0],
+            vec![0, 1, 1, 1],
+            vec![1, 0, 1, 1],
+            vec![1, 1, 0, 1],
+        ],
+        height: 6,
+        width: 4,
+    };
+    // 30, 31, 49 spawns O-shape
+    let mut gs = GameState::initial(6, 4, Default::default(), Some(31));
+    assert_eq!(gs.curr_shape_idx, 1);
+    gs.field = field;
+    let (lines_burnt, done) = gs.step(Action::HardDrop);
+    assert_eq!(lines_burnt, 0);
+    assert_eq!(done, true);
+}
+
 
 pub fn build_field(_: &str) -> Field {
     // TODO implement this to be similar to the build_shape

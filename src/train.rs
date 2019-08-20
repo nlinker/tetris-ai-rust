@@ -32,9 +32,9 @@ impl TetrisEnv {
         // the correct `lines_burnt` value
         let gs = &mut self.gs;
         let old_score = gs.score;
-        gs.base = dqn_action.base;
-        gs.rotation = dqn_action.rotation;
         if let Some(cells) = gs.try_current_shape(&dqn_action.base, dqn_action.rotation) {
+            gs.base = dqn_action.base;
+            gs.rotation = dqn_action.rotation;
             gs.curr_cells = cells;
         }
         let (lines_burnt, _) = gs.step(Action::HardDrop);

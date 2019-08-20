@@ -179,8 +179,11 @@ impl GameState {
         self.curr_shape_idx = curr_shape_idx;
         self.next_shape_idx = next_shape_idx;
         self.rng_queue = rng_queue;
-        // TODO deduplicate with spawn_new_shape function
-        self.base = Point(1, self.field.width as i32 / 2);
+        // TODO deduplicate with spawn_next_shape function
+        self.base = match self.curr_shape_idx {
+            1 => Point(0, self.field.width as i32 / 2 - 1), // O
+            _ => Point(1, self.field.width as i32 / 2 - 1),
+        };
         self.rotation = 0;
         self.score = 0;
         let shape = &TETRIMINOES[curr_shape_idx];
@@ -276,7 +279,10 @@ impl GameState {
         };
         // self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
-        self.base = Point(1, self.field.width as i32 / 2);
+        self.base = match self.curr_shape_idx {
+            1 => Point(0, self.field.width as i32 / 2 - 1), // O
+            _ => Point(1, self.field.width as i32 / 2 - 1),
+        };
         if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
             for i in 0..cells.len() {
                 self.curr_cells[i] = cells[i];
@@ -327,12 +333,12 @@ impl GameState {
                 }
             }
             Action::HardDrop => {
-                let (ish, cur_cells) = self.drop_current_shape();
+                let (i_new, cur_cells) = self.drop_current_shape();
                 if let Some(cells) = cur_cells {
                     for i in 0..cells.len() {
                         self.curr_cells[i] = cells[i];
                     }
-                    self.base = Point(ish, self.base.1);
+                    self.base = Point(i_new, self.base.1);
                     self.draw_current_shape();
                     lines_burnt = self.burn_lines();
                     self.spawn_next_shape();
@@ -393,7 +399,7 @@ impl GameState {
                 }
             }
         }
-        return (lines_burnt, false);
+        return (lines_burnt, self.game_over);
     }
 
 /*
