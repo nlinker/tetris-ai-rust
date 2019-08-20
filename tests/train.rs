@@ -56,16 +56,17 @@ fn test_get_valid_actions() {
         cells: vec![
             vec![0, 0, 0, 0, 0],
             vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 0, 0],
             vec![3, 0, 0, 0, 0],
             vec![2, 0, 0, 0, 4],
             vec![2, 3, 0, 4, 4],
             vec![0, 1, 1, 1, 1],
             vec![0, 1, 1, 1, 1],
         ],
-        height: 7,
+        height: 8,
         width: 5,
     };
-    let mut gs = GameState::initial(7, 5, Default::default(), Some(7));
+    let mut gs = GameState::initial(8, 5, Default::default(), Some(7));
     gs.field = field;
     assert_eq!(gs.curr_shape_idx, 0);
     let mut env = TetrisEnv { gs, lines_burnt: 0 };

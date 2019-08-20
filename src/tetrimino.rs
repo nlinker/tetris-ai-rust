@@ -42,7 +42,7 @@ impl Style {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Tetrimino {
     pub diffs: Vec<Point>,
-    pub shift: Point,
+    pub parity: Point,
     pub style: Style,
 }
 
@@ -57,6 +57,10 @@ pub struct RawShape<'a> {
 }
 
 lazy_static! {
+    /// ```
+    /// use tetris::tetrimino::{build_tetrimino, I};
+    /// let i = build_tetrimino(I);
+    /// ```
     pub static ref TETRIMINOES: [Tetrimino; 7] = [
         build_tetrimino(I),
         build_tetrimino(O),
@@ -171,7 +175,7 @@ pub fn build_tetrimino(src: RawShape<'_>) -> Tetrimino {
         ci += 1;
     }
     let color = color_from_str(src.color);
-    Tetrimino { diffs, shift: Point(shift_i, shift_j), style: color }
+    Tetrimino { diffs, parity: Point(shift_i, shift_j), style: color }
 }
 
 pub fn color_from_str(color_str: &str) -> Style {

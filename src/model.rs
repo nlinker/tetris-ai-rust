@@ -579,14 +579,14 @@ pub fn rotate(shape: &Tetrimino, r: i8) -> Vec<Point> {
             d.1 = t;
         }
         // swap shift
-        let t = p.shift.1;
-        p.shift.1 = p.shift.0;
-        p.shift.0 = t;
+        let t = p.parity.1;
+        p.parity.1 = p.parity.0;
+        p.parity.0 = t;
     }
     // shift and divide, so (0, 0) is the integer center of the rotated shape
     for d in &mut p.diffs {
-        d.0 = (d.0 - p.shift.0) / 2;
-        d.1 = (d.1 - p.shift.1) / 2;
+        d.0 = (d.0 + p.parity.0) / 2;
+        d.1 = (d.1 + p.parity.1) / 2;
     }
     p.diffs
 }
