@@ -57,8 +57,8 @@ fn test_get_valid_actions() {
         cells: vec![
             vec![0, 0, 0, 0, 0],
             vec![0, 0, 0, 0, 0],
-            vec![3, 0, 0, 0, 0],
-            vec![2, 0, 0, 0, 4],
+            vec![0, 0, 0, 0, 0],
+            vec![0, 0, 0, 4, 0],
             vec![2, 3, 0, 4, 4],
             vec![0, 1, 1, 1, 1],
             vec![0, 1, 1, 1, 1],
@@ -70,12 +70,13 @@ fn test_get_valid_actions() {
     gs.field = field;
     assert_eq!(gs.curr_shape_idx, 0);
     let mut env = TetrisEnv { gs, lines_burnt: 0 };
+    // note, the action DQNAction { base: Point(3, 1), rotation: 1 } doesn't included
     let expected = vec![
         DQNAction { base: Point(1, 1), rotation: 0 },
         DQNAction { base: Point(1, 2), rotation: 0 },
+        DQNAction { base: Point(1, -1), rotation: 1 },
         DQNAction { base: Point(1, 0), rotation: 1 },
         DQNAction { base: Point(1, 1), rotation: 1 },
-        DQNAction { base: Point(1, 2), rotation: 1 }
     ];
     assert_eq!(env.get_valid_actions(), expected);
 }
