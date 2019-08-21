@@ -53,16 +53,17 @@ impl TetrisEnv {
         };
         // in the worst case we have 4 rotations with each base, so the memory
         let n = self.gs.field.width;
-        let mut valid_actions = Vec::new();
-        let mut gs_base = self.gs.base;
-        let mut gs_cells = rotate(&TETRIMINOES[self.gs.curr_shape_idx], self.gs.rotation);
-        for r in rotations {
-            if r > 0 {
+        let mut valid_actions = Vec::with_capacity(2 * self.gs.field.width);
+        let mut j_shifts = Vec::with_capacity(self.gs.field.width);
+        for rotation in rotations {
+            j_shifts.clear();
+            let mut rotated_shape = rotate(&TETRIMINOES[self.gs.curr_shape_idx], rotation);
+            let mut gs_base = self.gs.base;
+            if rotation > 0 {
                 // we do the complex try_wall_kick_current_shape instead of
                 // just rotate, because some shapes can be rotated only with the shift down
-                if let Some((base, cells)) = self.gs.try_wall_kick_current_shape((r - 1, r)) {
+                if let Some((base, cells)) = self.gs.try_wall_kick_current_shape((rotation - 1, rotation)) {
                     gs_base = base;
-                    gs_cells = cells;
                 } else {
                     // no more rotations is possible
                     break;
@@ -71,36 +72,33 @@ impl TetrisEnv {
             // initial position
             {
                 let base = Point(gs_base.0, gs_base.1);
-                if is_valid(&self.gs.field, &base, &gs_cells) {
-                    valid_actions.push(DQNAction {
-                        base,
-                        rotation: r
-                    });
+                if is_valid(&self.gs.field, &base, &rotated_shape) {
+                    j_shifts.push(0 as i32);
                 }
             }
             // left
-            for j in 1..n {
-                let base = Point(gs_base.0, gs_base.1 - (j as i32));
-                if is_valid(&self.gs.field, &base, &gs_cells) {
-                    valid_actions.push(DQNAction {
-                        base,
-                        rotation: r
-                    });
+            for dj in 1..n {
+                let base = Point(gs_base.0, gs_base.1 - (dj as i32));
+                if is_valid(&self.gs.field, &base, &rotated_shape) {
+                    j_shifts.push(-(dj as i32));
                 } else {
                     break;
                 }
             }
             // right
-            for j in 1..n {
-                let base = Point(gs_base.0, gs_base.1 + (j as i32));
-                if is_valid(&self.gs.field, &base, &gs_cells) {
-                    valid_actions.push(DQNAction {
-                        base,
-                        rotation: r
-                    });
+            for dj in 1..n {
+                let base = Point(gs_base.0, gs_base.1 + (dj as i32));
+                if is_valid(&self.gs.field, &base, &rotated_shape) {
+                    j_shifts.push(dj as i32);
                 } else {
                     break;
                 }
+            }
+            // populate the actions
+            j_shifts.sort();
+            for dj in &j_shifts {
+                let base = Point(gs_base.0, gs_base.1 + *dj);
+                valid_actions.push(DQNAction { base, rotation });
             }
         }
         valid_actions
