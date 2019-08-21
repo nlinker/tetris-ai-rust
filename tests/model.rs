@@ -179,8 +179,8 @@ fn test_hard_drop() {
         height: 6,
         width: 4,
     };
-    // 30, 31, 49 spawns O-shape
-    let mut gs = GameState::initial(6, 4, Default::default(), Some(31));
+    // this seed provides spawning O-shape
+    let mut gs = GameState::initial(6, 4, Default::default(), Some(22));
     assert_eq!(gs.curr_shape_idx, 1);
     gs.field = field;
     let (lines_burnt, done) = gs.step(Action::HardDrop);

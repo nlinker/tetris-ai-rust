@@ -66,7 +66,16 @@ fn test_get_valid_actions() {
         height: 7,
         width: 5,
     };
-    let mut gs = GameState::initial(field.height, field.width, Default::default(), Some(7));
+    let mut seeds = Vec::new();
+    for seed in 0..100 {
+        let gs = GameState::initial(6, 4, Default::default(), Some(seed));
+        if gs.curr_shape_idx == 0 {
+            seeds.push(seed);
+        }
+    }
+    println!("seeds = {:?}", seeds);
+
+    let mut gs = GameState::initial(field.height, field.width, Default::default(), Some(30));
     gs.field = field;
     assert_eq!(gs.curr_shape_idx, 0);
     let mut env = TetrisEnv { gs, lines_burnt: 0 };

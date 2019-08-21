@@ -155,45 +155,29 @@ impl GameState {
     /// mutate the game state to the initial one,
     /// we don't reset random generators, but reset random queue
     pub fn reset(&mut self) {
-        let curr_shape_idx;
+        for i in 0..self.field.height {
+            for j in 0..self.field.width {
+                self.field.cells[i][j] = 0;
+            }
+        }
         let next_shape_idx;
         let mut rng_queue;
         match self.config.randomness {
             Randomness::JustRandom => {
                 next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
-                curr_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
                 rng_queue = Vec::new();
             },
             Randomness::ShuffledQueue => {
                 rng_queue = (0..TETRIMINOES.len()).collect::<Vec<_>>();
                 rng_queue.shuffle(&mut self.rng);
                 next_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
-                curr_shape_idx = rng_queue.pop().unwrap(); // guaranteed to exist
             },
         }
-        for i in 0..self.field.height {
-            for j in 0..self.field.width {
-                self.field.cells[i][j] = 0;
-            }
-        }
-        self.curr_shape_idx = curr_shape_idx;
+        self.curr_shape_idx = 0;
         self.next_shape_idx = next_shape_idx;
         self.rng_queue = rng_queue;
-        // TODO deduplicate with spawn_next_shape function
-        self.base = match self.curr_shape_idx {
-            1 => Point(0, self.field.width as i32 / 2 - 1), // O
-            _ => Point(1, self.field.width as i32 / 2 - 1),
-        };
-        self.rotation = 0;
         self.score = 0;
-        let shape = &TETRIMINOES[curr_shape_idx];
-        if let Some(curr_cells) = try_shape(&self.field, &self.base, self.rotation, shape) {
-            self.curr_cells = curr_cells;
-            self.game_over = false;
-        } else {
-            self.curr_cells = Vec::new();
-            self.game_over = true;
-        }
+        self.spawn_next_shape();
     }
 
     /// transition should be the pair of `(p, q)`, where `p, q \in {0, 1, 2, 3}`
@@ -277,16 +261,14 @@ impl GameState {
                 }
             }
         };
-        // self.next_shape_idx = self.rng.gen_range(0, TETRIMINOES.len());
         self.rotation = 0;
         self.base = match self.curr_shape_idx {
             1 => Point(0, self.field.width as i32 / 2 - 1), // O
             _ => Point(1, self.field.width as i32 / 2 - 1),
         };
         if let Some(cells) = self.try_current_shape(&self.base, self.rotation) {
-            for i in 0..cells.len() {
-                self.curr_cells[i] = cells[i];
-            }
+            self.curr_cells = cells;
+            self.game_over = false;
         } else {
             // restore index to avoid incorrect color change of the last tetrimino,
             // that caused the game over

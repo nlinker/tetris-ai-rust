@@ -14,6 +14,7 @@ use tch::{nn, nn::ModuleT, nn::OptimizerConfig, Device, Tensor, Cuda};
 use tetris::model::{GameState, Action};
 use tetris::agent::{DQNAgent, DQNState};
 use tetris::train::run_training;
+use tetris::config::{Config, Scoring, Randomness};
 
 // io::Result<()>
 fn main() -> failure::Fallible<()> {
@@ -62,7 +63,11 @@ fn run_interactive_game() {
     write!(stdout, "{}{}{}", termion::clear::All, termion::cursor::Goto(1, 2), termion::cursor::Hide).unwrap();
     stdout.flush().unwrap();
 
-    let mut gs = GameState::initial(22, 10, Default::default(), Some(7));
+    let config = Config {
+        scoring: Scoring::BurnOnly,
+        randomness: Randomness::ShuffledQueue,
+    };
+    let mut gs = GameState::initial(22, 10, config, Some(22));
     let mut k = 0;
     let k_delay = 1000;
     {
