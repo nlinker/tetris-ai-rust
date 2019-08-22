@@ -1,7 +1,10 @@
-use crate::agent::{DQNAgent, DQNState, DQNAction};
+use crate::agent::{DQNAgent, DQNState, DQNAction, AgentConf};
 use crate::model::{GameState, rotate, Action, Point, is_valid, try_shape};
 use crate::tetrimino::TETRIMINOES;
-use failure::_core::sync::atomic::Ordering::AcqRel;
+use std::collections::VecDeque;
+use rand_xoshiro::Xoshiro512StarStar;
+use rand::{SeedableRng, Rng};
+use rand::prelude::SliceRandom;
 
 /// `lines_burnt` - how many lines has been burnt since
 /// the last state with the new action applied,
@@ -171,19 +174,59 @@ impl TetrisEnv {
 }
 
 pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
-    let agent = DQNAgent {
-        conf: Default::default(),
-        memory: Default::default(),
+    let rng = if let Some(seed) = seed {
+        Xoshiro512StarStar::seed_from_u64(seed)
+    } else {
+        Xoshiro512StarStar::from_entropy()
     };
+    let conf: AgentConf = Default::default();
+    let memory: VecDeque<(DQNState, DQNState, f32, bool)> = Default::default();
+    let mut agent = DQNAgent { conf, memory, rng };
     let mut env = TetrisEnv::new(seed);
     let episodes = 2000;
     let max_steps = Some(10000);
     let replay_memory_init_size = 50000;
 
     println!("Populating replay memory...");
+    //    state = env.reset()
+    //    state = state_processor.process(sess, state)
+    //    state = np.stack([state] * 4, axis=2)
+    //    for i in range(replay_memory_init_size):
+    //        action_probs = policy(sess, state, epsilons[min(total_t, epsilon_decay_steps - 1)])
+    //        action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
+    //        next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
+    //        next_state = state_processor.process(sess, next_state)
+    //        next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
+    //        replay_memory.append(Transition(state, action, reward, next_state, done))
+    //        if done:
+    //            state = env.reset()
+    //            state = state_processor.process(sess, state)
+    //            state = np.stack([state] * 4, axis=2)
+    //        else:
+    //            state = next_state
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+    // agent.add_to_memory(current_state, next_states[best_action], reward, done)
     let state = env.reset();
     for _ in 0..replay_memory_init_size {
+        let mut steps = 0;
+        let state = env.reset();
+        while max_steps.is_none() || steps < max_steps.unwrap() {
+            let valid_actions = env.get_valid_actions();
+            let best_action = agent.best_action(&valid_actions);
+            let (next_state, reward, done) = env.step(best_action);
+            // next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
 
+            if done {
+                break;
+            }
+        }
     }
 
 //    for episode in 0..episodes {
