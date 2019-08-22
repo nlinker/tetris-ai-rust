@@ -2,8 +2,11 @@
 
 use tetris::model::{Point, Field, try_shape, rotate, GameState, Action};
 use tetris::train::TetrisEnv;
-use tetris::agent::DQNAction;
+use tetris::agent::{DQNAction, DQNAgent, DQNState};
 use std::collections::HashMap;
+use rand_xoshiro::Xoshiro512StarStar;
+use rand::SeedableRng;
+use std::fmt::format;
 
 #[test]
 fn test_dqn_state_after_step() {
@@ -78,7 +81,7 @@ fn test_get_valid_actions() {
         DQNAction { base: Point(1, 0), rotation: 1 },
         DQNAction { base: Point(1, 1), rotation: 1 },
     ];
-    assert_eq!(gs.curr_shape_idx, 0);
+    assert_eq!(env.gs.curr_shape_idx, 0);
     assert_eq!(env.get_valid_actions(), expected);
 }
 
@@ -99,9 +102,18 @@ fn test_select_actions() {
     };
     let mut gs = GameState::initial(field.height, field.width, Default::default(), Some(30));
     gs.field = field;
+    let gs_curr_shape_idx = gs.curr_shape_idx;
     let mut env = TetrisEnv { gs, lines_burnt: 0 };
+    let mut agent = DQNAgent::new(Some(24));
 
-    assert_eq!(gs.curr_shape_idx, 0);
+    let valid_actions = env.get_valid_actions();
+    let action = agent.select_best_action(&valid_actions);
+    let (next_state, reward, done) = env.step(action);
+    assert_eq!(gs_curr_shape_idx, 0);
+    assert_eq!(action, DQNAction { base: Point(1, 1), rotation: 1 });
+    assert_eq!(next_state, DQNState { lines_burnt: 1, sum_holes: 0, sum_bumps: 8, sum_height: 12, curr_shape_idx: 1 });
+    assert_eq!(reward, 1.0);
+    assert_eq!(done, false);
 }
 
 #[test]

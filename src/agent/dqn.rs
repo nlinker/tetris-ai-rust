@@ -1,7 +1,7 @@
 use std::collections::{VecDeque, HashMap};
-use crate::model::{Point, Action};
 use rand_xoshiro::Xoshiro512StarStar;
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use crate::model::{Point, Action};
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct DQNState {
@@ -9,6 +9,7 @@ pub struct DQNState {
     pub sum_holes: u16,
     pub sum_bumps: u16,
     pub sum_height: u16,
+    pub curr_shape_idx: usize,
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
@@ -64,7 +65,20 @@ pub struct DQNAgent {
 }
 
 impl DQNAgent {
-    pub fn best_action(&mut self, actions: &[DQNAction]) -> DQNAction {
+    pub fn new(seed: Option<u64>) -> DQNAgent {
+        let conf = AgentConf::default();
+        let rng = if let Some(seed) = seed {
+            Xoshiro512StarStar::seed_from_u64(seed)
+        } else {
+            Xoshiro512StarStar::from_entropy()
+        };
+        DQNAgent {
+            conf,
+            memory: VecDeque::default(),
+            rng,
+        }
+    }
+    pub fn select_best_action(&mut self, actions: &[DQNAction]) -> DQNAction {
         actions[self.rng.gen_range(0, actions.len())]
     }
 }

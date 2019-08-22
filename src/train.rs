@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use rand_xoshiro::Xoshiro512StarStar;
 use rand::{SeedableRng, Rng};
 use rand::prelude::SliceRandom;
+use crate::config::Config;
 
 /// `lines_burnt` - how many lines has been burnt since
 /// the last state with the new action applied,
@@ -18,7 +19,7 @@ pub struct TetrisEnv {
 impl TetrisEnv {
     pub fn new(seed: Option<u64>) -> TetrisEnv {
         TetrisEnv {
-            gs: GameState::initial(22, 10, Default::default(), seed),
+            gs: GameState::initial(22, 10, Config::default(), seed),
             lines_burnt: 0,
         }
     }
@@ -169,6 +170,7 @@ impl TetrisEnv {
             sum_holes: self.get_sum_holes(&block_heights),
             sum_bumps: self.get_sum_bumps(&block_heights),
             sum_height: self.get_sum_height(&block_heights),
+            curr_shape_idx: self.gs.curr_shape_idx,
         }
     }
 }
@@ -179,8 +181,8 @@ pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
     } else {
         Xoshiro512StarStar::from_entropy()
     };
-    let conf: AgentConf = Default::default();
-    let memory: VecDeque<(DQNState, DQNState, f32, bool)> = Default::default();
+    let conf = AgentConf::default();
+    let memory = VecDeque::default();
     let mut agent = DQNAgent { conf, memory, rng };
     let mut env = TetrisEnv::new(seed);
     let episodes = 2000;
@@ -219,7 +221,7 @@ pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
         let state = env.reset();
         while max_steps.is_none() || steps < max_steps.unwrap() {
             let valid_actions = env.get_valid_actions();
-            let best_action = agent.best_action(&valid_actions);
+            let best_action = agent.select_best_action(&valid_actions);
             let (next_state, reward, done) = env.step(best_action);
             // next_state, reward, done, _ = env.step(VALID_ACTIONS[action])
 
