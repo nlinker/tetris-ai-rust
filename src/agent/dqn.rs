@@ -57,11 +57,20 @@ impl Default for AgentConf {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct DQNAgent {
     pub conf: AgentConf,
     pub memory: VecDeque<(DQNState, DQNState, f32, bool)>,
     pub rng: Xoshiro512StarStar,
+}
+
+#[derive(Debug, Clone)]
+pub struct DQNTransition {
+    curr_state: DQNState,
+    action: DQNAction,
+    reward: f32,
+    next_state: DQNState,
+    done: bool
 }
 
 impl DQNAgent {
@@ -79,6 +88,27 @@ impl DQNAgent {
         }
     }
     pub fn select_best_action(&mut self, actions: &[DQNAction]) -> DQNAction {
-        actions[self.rng.gen_range(0, actions.len())]
+        //def policy_fn(sess: tf.Session, observation: np.ndarray, epsilon: float) -> np.ndarray:
+        //    """
+        //    Args:
+        //        sess: Tensorflow session
+        //        observation: [84, 84, 4] grayscale image, the current and 3 previous frames
+        //        epsilon: the probability to choose action randomly instead of via neural network
+        //    Returns:
+        //        probability vector for every action
+        //    """
+        //    a = np.ones(n_a, dtype=float) * epsilon / n_a
+        //    q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
+        //    best_action = np.argmax(q_values)
+        //    a[best_action] += (1.0 - epsilon)
+        //    return a
+        if self.rng.gen::<f32>() <= self.conf.epsilon {
+            actions[self.rng.gen_range(0, actions.len())]
+        } else {
+            // ask the neural network about the best value
+            // q_values = estimator.predict(sess, np.expand_dims(observation, 0))[0]
+            // best_action = np.argmax(q_values)        }
+            unreachable!();
+        }
     }
 }

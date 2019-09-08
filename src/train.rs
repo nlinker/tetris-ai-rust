@@ -1,4 +1,4 @@
-use crate::agent::{DQNAgent, DQNState, DQNAction, AgentConf};
+use crate::agent::{DQNAgent, DQNState, DQNAction, AgentConf, DQNTransition};
 use crate::model::{GameState, rotate, Action, Point, is_valid, try_shape};
 use crate::tetrimino::TETRIMINOES;
 use std::collections::VecDeque;
@@ -108,8 +108,15 @@ impl TetrisEnv {
         valid_actions
     }
 
-    pub fn convert_to_dqn_action(actions: Vec<Action>) -> DQNAction {
-        unimplemented!()
+    fn convert_to_dqn_state(&self) -> DQNState {
+        let block_heights = self.get_block_heights();
+        DQNState {
+            lines_burnt: self.lines_burnt,
+            sum_holes: self.get_sum_holes(&block_heights),
+            sum_bumps: self.get_sum_bumps(&block_heights),
+            sum_height: self.get_sum_height(&block_heights),
+            curr_shape_idx: self.gs.curr_shape_idx,
+        }
     }
 
     pub fn get_block_heights(&self) -> Vec<u16> {
@@ -162,17 +169,6 @@ impl TetrisEnv {
         });
         sum_bumps
     }
-
-    fn convert_to_dqn_state(&self) -> DQNState {
-        let block_heights = self.get_block_heights();
-        DQNState {
-            lines_burnt: self.lines_burnt,
-            sum_holes: self.get_sum_holes(&block_heights),
-            sum_bumps: self.get_sum_bumps(&block_heights),
-            sum_height: self.get_sum_height(&block_heights),
-            curr_shape_idx: self.gs.curr_shape_idx,
-        }
-    }
 }
 
 pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
@@ -206,16 +202,10 @@ pub fn run_training(seed: Option<u64>) -> failure::Fallible<()> {
     //            state = np.stack([state] * 4, axis=2)
     //        else:
     //            state = next_state
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
+
     // agent.add_to_memory(current_state, next_states[best_action], reward, done)
     let state = env.reset();
+    let mut replay_memory = VecDeque::<DQNTransition>::new();
     for _ in 0..replay_memory_init_size {
         let mut steps = 0;
         let state = env.reset();

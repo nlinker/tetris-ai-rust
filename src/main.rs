@@ -15,48 +15,46 @@ use tetris::model::{GameState, Action};
 use tetris::agent::{DQNAgent, DQNState};
 use tetris::train::run_training;
 use tetris::config::{Config, Scoring, Randomness};
+use std::str::FromStr;
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "tetris-app", about = "Runs various command against tetris environment")]
+struct Opt {
+    /// The mode how to run the program
+    // short and long flags (-d, --debug) will be deduced from the field's name
+    #[structopt(short = "m", long = "mode")]
+    mode: Mode
+}
+
+#[derive(Debug)]
+enum Mode {
+    Run, Train, Mnist
+}
+
+impl FromStr for Mode {
+    type Err = String;
+    fn from_str(day: &str) -> Result<Self, Self::Err> {
+        match day {
+            "run" => Ok(Mode::Run),
+            "train" => Ok(Mode::Train),
+            "mnist" => Ok(Mode::Mnist),
+            _ => Err("Could not parse a day".into()),
+        }
+    }
+}
 
 // io::Result<()>
 fn main() -> failure::Fallible<()> {
-    let matches = App::new("tetris-app")
-        .about("Runs various command against tetris environment")
-        .version("1.0")
-        .author("Nick <email goes here>")
-        .arg(Arg::with_name("run")
-            .help("run interactive game")
-            .short("r")
-            .long("run"))
-        .arg(Arg::with_name("train")
-            .help("train tetris agent")
-            .short("t")
-            .long("train"))
-        .arg(Arg::with_name("mnist")
-            .help("train mnist")
-            .short("m")
-            .long("mnist"))
-//        .arg(Arg::with_name("input")
-//            .help("the input file to use")
-//            .index(1)
-//            .required(true))
-        .get_matches();
-//    // Because "input" is required we can safely call unwrap() because had the user NOT
-//    // specified a value, clap would have explained the error the user, and exited.
-//    println!("Doing real work with file: {}", matches.value_of("input").unwrap() );
-
-    // We can find out whether or not debugging was turned on
-    if matches.is_present("run") {
-        run_interactive_game();
+    let opt: Opt = Opt::from_args();
+    match opt.mode {
+        Mode::Run => run_interactive_game(),
+        Mode::Train => run_training(None),
+        Mode::Mnist => run_training_mnist(),
     }
-    if matches.is_present("mnist") {
-        run_training_mnist()?;
-    }
-    if matches.is_present("train") {
-        run_training(None)?;
-    }
-    Ok(())
 }
 
-fn run_interactive_game() {
+fn run_interactive_game() -> failure::Fallible<()> {
     let mut stdout = stdout().into_raw_mode().unwrap();
     let mut stdin = async_stdin().keys();
 
@@ -69,7 +67,7 @@ fn run_interactive_game() {
     };
     let mut gs = GameState::initial(22, 10, config, Some(22));
     let mut k = 0;
-    let k_delay = 1000;
+    let k_delay = 80;
     {
         println!("{}", gs.prettify_game_state(true, true, true));
         stdout.flush().unwrap();
@@ -106,6 +104,7 @@ fn run_interactive_game() {
     write!(stdout, "{}", gs.prettify_game_state(false, true, true)).unwrap();
     write!(stdout, "{}", termion::cursor::Show).unwrap();
     stdout.flush().unwrap();
+    Ok(())
 }
 
 fn run_training_mnist() -> failure::Fallible<()> {
